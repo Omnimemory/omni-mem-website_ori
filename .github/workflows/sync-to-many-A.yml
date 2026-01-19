@@ -1,0 +1,132 @@
+name: Sync docs subtree into many repos (targets.json)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "**"
+      # 不希望改 workflow 本身就触发同步（避免你调试 YAML 时疯狂跑）
+      - "!.github/workflows/**"
+      # 但 targets.json 在 workflows 目录里，所以要重新包含回来（顺序必须在排除之后）
+      - ".github/workflows/targets.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH_DEFAULT: main
+      PREFIX_DEFAULT: skill_file
+      SYNC_DEBUG: "0"
+      TARGETS_FILE: ".github/workflows/targets.json"
+
+    steps:
+      - name: Checkout source repo (B)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate targets.json
+        env:
+          TARGETS_FILE: ${{ env.TARGETS_FILE }}
+        run: |
+          set -euo pipefail
+          test -f "${TARGETS_FILE}" || (echo "ERROR: ${TARGETS_FILE} not found" && exit 10)
+          python - <<'PY'
+          import json, sys, os
+          p = os.environ["TARGETS_FILE"]
+          with open(p, "r", encoding="utf-8") as f:
+            data = json.load(f)
+          if not isinstance(data, list) or not data:
+            print("ERROR: targets.json must be a non-empty JSON array")
+            sys.exit(11)
+          for i, item in enumerate(data):
+            if not isinstance(item, dict) or "full" not in item:
+              print(f"ERROR: item[{i}] must be an object and include 'full'")
+              sys.exit(12)
+          print("OK:", len(data), "repos")
+          PY
+
+      - name: Sync to targets
+        env:
+          MULTI_REPO_TOKEN: ${{ secrets.MULTI_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGETS_FILE: ${{ env.TARGETS_FILE }}
+          TARGET_BRANCH_DEFAULT: ${{ env.TARGET_BRANCH_DEFAULT }}
+          PREFIX_DEFAULT: ${{ env.PREFIX_DEFAULT }}
+          SYNC_DEBUG: ${{ env.SYNC_DEBUG }}
+        run: |
+          set -euo pipefail
+
+          # 避免 debug 时意外泄露 token（GitHub 也会自动掩码，但我们再保险一次）
+          echo "::add-mask::${MULTI_REPO_TOKEN}"
+          echo "::add-mask::${GITHUB_TOKEN}"
+
+          if [ "${SYNC_DEBUG}" = "1" ]; then
+            set -x
+            export GIT_TERMINAL_PROMPT=0
+            export GIT_TRACE=1
+            export GIT_CURL_VERBOSE=1
+          fi
+
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+          # 源仓库（当前 B 仓库）用 GITHUB_TOKEN 免交互拉取
+          AUTH_SRC_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          jq -c '.[]' "${TARGETS_FILE}" | while read -r item; do
+            repo_full=$(echo "$item" | jq -r '.full')
+            repo_branch=$(echo "$item" | jq -r '.branch // env.TARGET_BRANCH_DEFAULT')
+            prefix=$(echo "$item" | jq -r '.prefix // env.PREFIX_DEFAULT')
+
+            echo "=== Syncing ${repo_full} (branch=${repo_branch}, prefix=${prefix}) ==="
+
+            rm -rf target
+            mkdir -p target
+
+            # 目标仓库 clone：用 PAT 确保对目标仓库有写权限
+            git clone "https://x-access-token:${MULTI_REPO_TOKEN}@github.com/${repo_full}.git" target
+            cd target
+
+            # 目标分支
+            git checkout "${repo_branch}" || git checkout -b "${repo_branch}" "origin/${repo_branch}"
+
+            # subtree 会生成提交，需要配置提交身份
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            # 添加/更新源 remote（B）
+            if ! git remote | grep -q '^src-remote$'; then
+              git remote add src-remote "${AUTH_SRC_URL}"
+            else
+              git remote set-url src-remote "${AUTH_SRC_URL}"
+            fi
+
+            # 拉取 B 的 main（如需同步别的分支，把 main 改成你想要的）
+            git fetch src-remote main
+
+            # 已初始化则 pull；未初始化则 add
+            git subtree pull -P "${prefix}" src-remote main --squash || \
+              git subtree add  -P "${prefix}" src-remote main --squash
+
+            # subtree 往往已经生成 commit：用 “是否领先 origin” 判断要不要 push
+            git fetch origin "${repo_branch}" || true
+            if git show-ref --verify --quiet "refs/remotes/origin/${repo_branch}"; then
+              ahead=$(git rev-list --count "origin/${repo_branch}..HEAD")
+            else
+              ahead=1
+            fi
+
+            if [ "${ahead}" -eq 0 ]; then
+              echo "No new commits to push for ${repo_full}"
+            else
+              echo "Branch is ahead by ${ahead} commit(s), pushing..."
+              git push origin "HEAD:${repo_branch}"
+            fi
+
+            cd ..
+          done
