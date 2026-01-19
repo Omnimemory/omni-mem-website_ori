@@ -4,6 +4,7 @@ import { BarChart3, Home, KeyRound, Settings, UploadCloud, UserCircle, Play, Che
 import { Analytics } from '@vercel/analytics/react'
 import { DashboardShell, type DashboardLink } from './components/dashboard-shell'
 import { useSupabaseSession } from './hooks/use-supabase-session'
+import { MemoryPlayerV3 } from './components/memory-demo-v3'
 import { DashboardPage } from './pages/dashboard'
 import { ApiKeysPage } from './pages/api-keys'
 import { UploadsPage } from './pages/uploads'
@@ -352,16 +353,20 @@ function DemoSection() {
           </button>
         </div>
         <div className="demo-content">
-          <h3 className="demo-content-title">
-            {activeTab === 'conversation' ? 'Interactive Demo' : 'Video Demo'}
-          </h3>
-          <div className="demo-placeholder">
-            <p className="demo-placeholder-text">
-              {activeTab === 'conversation'
-                ? 'Experience Omni Memory in action. Interactive demo coming soon.'
-                : 'Watch how Omni Memory works. Video demo coming soon.'}
-            </p>
-          </div>
+          {activeTab === 'video' ? (
+            <MemoryPlayerV3 />
+          ) : (
+            <>
+              <h3 className="demo-content-title">
+                Interactive Demo
+              </h3>
+              <div className="demo-placeholder">
+                <p className="demo-placeholder-text">
+                  Experience Omni Memory in action. Interactive demo coming soon.
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -615,25 +620,508 @@ function EnterpriseSection({ content }: { content: FeaturesContent }) {
 }
 
 // ============ HOW IT WORKS SECTION ============
+// Node graph data structure for the knowledge graph
+interface GraphNode {
+  id: string;
+  icon: 'person' | 'location' | 'object' | 'analyse' | 'research' | 'study';
+  layer: 'cognition' | 'perception';
+  active?: boolean;
+}
+
+interface GraphEdge {
+  from: string;
+  to: string;
+}
+
+const knowledgeGraphData = {
+  nodes: [
+    // Cognition layer (top row - entities)
+    { id: 'c1', icon: 'person', layer: 'cognition' },
+    { id: 'c2', icon: 'location', layer: 'cognition' },
+    { id: 'c3', icon: 'person', layer: 'cognition' },
+    { id: 'c4', icon: 'object', layer: 'cognition' },
+    // Perception layer (bottom row - evidence)
+    { id: 'p1', icon: 'analyse', layer: 'perception' },
+    { id: 'p2', icon: 'research', layer: 'perception', active: true },
+    { id: 'p3', icon: 'study', layer: 'perception' },
+    { id: 'p4', icon: 'analyse', layer: 'perception' },
+    { id: 'p5', icon: 'research', layer: 'perception' },
+  ] as GraphNode[],
+  edges: [
+    // Vertical connections (perception to cognition)
+    { from: 'p1', to: 'c1' },
+    { from: 'p1', to: 'c2' },
+    { from: 'p2', to: 'c1' },
+    { from: 'p2', to: 'c2' },
+    { from: 'p3', to: 'c2' },
+    { from: 'p3', to: 'c3' },
+    { from: 'p4', to: 'c3' },
+    { from: 'p4', to: 'c4' },
+    { from: 'p5', to: 'c4' },
+    // Horizontal connections within perception layer
+    { from: 'p1', to: 'p2' },
+    { from: 'p2', to: 'p3' },
+    { from: 'p3', to: 'p4' },
+    { from: 'p4', to: 'p5' },
+    // Horizontal connections within cognition layer
+    { from: 'c1', to: 'c2' },
+    { from: 'c2', to: 'c3' },
+    { from: 'c3', to: 'c4' },
+  ] as GraphEdge[]
+};
+
 function HowItWorksSection({ content }: { content: HowItWorksContent }) {
+  // Calculate node positions for SVG edges
+  const getNodePosition = (nodeId: string): { x: number; y: number } => {
+    const cognitionNodes = knowledgeGraphData.nodes.filter(n => n.layer === 'cognition');
+    const perceptionNodes = knowledgeGraphData.nodes.filter(n => n.layer === 'perception');
+
+    const cognitionIdx = cognitionNodes.findIndex(n => n.id === nodeId);
+    const perceptionIdx = perceptionNodes.findIndex(n => n.id === nodeId);
+
+    if (cognitionIdx !== -1) {
+      // 4 cognition nodes spread across width
+      const spacing = 280 / (cognitionNodes.length + 1);
+      return { x: spacing * (cognitionIdx + 1), y: 20 };
+    } else if (perceptionIdx !== -1) {
+      // 5 perception nodes spread across width
+      const spacing = 280 / (perceptionNodes.length + 1);
+      return { x: spacing * (perceptionIdx + 1), y: 80 };
+    }
+    return { x: 0, y: 0 };
+  };
+
+  const renderNodeIcon = (icon: GraphNode['icon']) => {
+    switch (icon) {
+      case 'person': return <PersonIcon />;
+      case 'location': return <LocationIcon />;
+      case 'object': return <ObjectIcon />;
+      case 'analyse': return <AnalyseIcon />;
+      case 'research': return <ResearchIcon />;
+      case 'study': return <StudyIcon />;
+    }
+  };
+
+  const cognitionNodes = knowledgeGraphData.nodes.filter(n => n.layer === 'cognition');
+  const perceptionNodes = knowledgeGraphData.nodes.filter(n => n.layer === 'perception');
+
   return (
-    <section className="module-section" id="how-it-works">
+    <section className="module-section process-section" id="how-it-works">
       <div className="container-v2">
         <p className="module-eyebrow">{content.eyebrow}</p>
         <h2 className="module-title">{content.title}</h2>
         <p className="module-subtitle">{content.description}</p>
 
-        <div className="steps-grid-v2">
-          {content.steps.map((step, i) => (
-            <div key={i} className="step-card-v2">
-              <span className="step-number">{String(i + 1).padStart(2, '0')}</span>
-              <h4 className="step-title">{step.title}</h4>
-              <p className="step-desc">{step.description}</p>
+        {/* Process Pipeline */}
+        <div className="pipeline">
+          {/* Cards Row */}
+          <div className="pipeline-cards">
+            {/* INGEST */}
+            <div className="pipeline-stage">
+              <div className="card card-ingest">
+                <div className="ingest-grid">
+                  <div className="input-box input-active">
+                    <VideoIcon />
+                    <span>Video</span>
+                  </div>
+                  <div className="input-box">
+                    <TextIcon />
+                    <span>Text</span>
+                  </div>
+                  <div className="input-box">
+                    <AudioIcon />
+                    <span>Audio</span>
+                  </div>
+                  <div className="input-box">
+                    <ActionsIcon />
+                    <span>Actions</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
+
+            {/* Arrow */}
+            <div className="pipeline-arrow">
+              <svg viewBox="0 0 40 16" fill="none">
+                <path d="M0 8H32M32 8L26 3M32 8L26 13" stroke="#D1D1D1" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+
+            {/* ENRICH */}
+            <div className="pipeline-stage pipeline-stage-enrich">
+              <div className="card card-enrich">
+                {/* Main content area with graph and labels */}
+                <div className="enrich-content">
+                  {/* Left side: Node graph with edges */}
+                  <div className="enrich-graph">
+                    {/* Cognition Layer - Entity Nodes */}
+                    <div className="kg-row kg-row-cognition">
+                      {cognitionNodes.map(node => (
+                        <div key={node.id} className={`kg-node ${node.active ? 'kg-node-active' : ''}`}>
+                          {renderNodeIcon(node.icon)}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* SVG Edges connecting nodes */}
+                    <svg className="kg-edges" viewBox="0 0 192 28">
+                      {/* Cognition centers (4 nodes, offset 20px): 36, 76, 116, 156 */}
+                      {/* Perception centers (5 nodes): 16, 56, 96, 136, 176 */}
+
+                      {/* Cross connections between layers */}
+                      <line x1="36" y1="0" x2="16" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="36" y1="0" x2="56" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="76" y1="0" x2="56" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="76" y1="0" x2="96" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="116" y1="0" x2="96" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="116" y1="0" x2="136" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="156" y1="0" x2="136" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="156" y1="0" x2="176" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+
+                      {/* Horizontal connections in cognition layer */}
+                      <line x1="48" y1="0" x2="64" y2="0" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="88" y1="0" x2="104" y2="0" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="128" y1="0" x2="144" y2="0" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+
+                      {/* Horizontal connections in perception layer */}
+                      <line x1="28" y1="28" x2="44" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="68" y1="28" x2="84" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="108" y1="28" x2="124" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="148" y1="28" x2="164" y2="28" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                    </svg>
+
+                    {/* Perception Layer - Evidence Nodes */}
+                    <div className="kg-row kg-row-perception">
+                      {perceptionNodes.map(node => (
+                        <div key={node.id} className={`kg-node ${node.active ? 'kg-node-active' : ''}`}>
+                          {renderNodeIcon(node.icon)}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Vertical arrows from perception nodes to timeline */}
+                    <svg className="kg-vertical-arrows" viewBox="0 0 192 16">
+                      {/* Vertical dashed lines from perception nodes (5 nodes): 16, 56, 96, 136, 176 */}
+                      <line x1="16" y1="0" x2="16" y2="16" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="56" y1="0" x2="56" y2="16" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="96" y1="0" x2="96" y2="16" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="136" y1="0" x2="136" y2="16" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1="176" y1="0" x2="176" y2="16" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="3 2"/>
+                    </svg>
+
+                    {/* Timeline */}
+                    <div className="kg-timeline">
+                      <img src="/3 Stages/Module Parts/Timeline.svg" alt="Timeline" className="timeline-svg" />
+                    </div>
+                  </div>
+
+                  {/* Connecting arrows from graph to labels */}
+                  <div className="enrich-arrows">
+                    <svg viewBox="0 0 24 100" preserveAspectRatio="none">
+                      {/* Arrow to Cognition Layer - aligned with cognition row */}
+                      <path d="M0 12 L18 12" stroke="#D1D1D1" strokeWidth="1" fill="none" markerEnd="url(#arrowhead)" />
+                      {/* Arrow to Perception Layer - aligned with perception row */}
+                      <path d="M0 42 L18 42" stroke="#D1D1D1" strokeWidth="1" fill="none" markerEnd="url(#arrowhead)" />
+                      {/* Arrow to Physical Layer - aligned with timeline */}
+                      <path d="M0 82 L18 82" stroke="#D1D1D1" strokeWidth="1" fill="none" markerEnd="url(#arrowhead)" />
+                      <defs>
+                        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                          <path d="M0 0 L6 3 L0 6 Z" fill="#D1D1D1" />
+                        </marker>
+                      </defs>
+                    </svg>
+                  </div>
+
+                  {/* Right side: Layer labels */}
+                  <div className="enrich-labels">
+                    <div className="layer-label">
+                      <img src="/3 Stages/Module Parts/Rectangle 8.svg" alt="" />
+                      <span>Cognition Layer</span>
+                    </div>
+                    <div className="layer-label">
+                      <img src="/3 Stages/Module Parts/Rectangle 8.svg" alt="" />
+                      <span>Perception Layer</span>
+                    </div>
+                    <div className="layer-label">
+                      <img src="/3 Stages/Module Parts/Rectangle 8.svg" alt="" />
+                      <span>Physical Layer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div className="pipeline-arrow">
+              <svg viewBox="0 0 40 16" fill="none">
+                <path d="M0 8H32M32 8L26 3M32 8L26 13" stroke="#D1D1D1" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+
+            {/* RECALL */}
+            <div className="pipeline-stage">
+              <div className="card card-recall">
+                <div className="recall-layout">
+                  {/* Left: Mini graph + Profiles */}
+                  <div className="recall-left">
+                    <div className="mini-kg">
+                      <div className="mini-kg-nodes">
+                        <div className="mini-node"><PersonIcon /></div>
+                        <div className="mini-node"><LocationIcon /></div>
+                        <div className="mini-node mini-node-active"><ObjectIcon /></div>
+                      </div>
+                      <svg className="mini-kg-lines" viewBox="0 0 100 30">
+                        <line x1="20" y1="25" x2="50" y2="25" stroke="#D1D1D1" strokeWidth="1"/>
+                        <line x1="20" y1="8" x2="30" y2="25" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="2 2"/>
+                        <line x1="50" y1="8" x2="40" y2="25" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="2 2"/>
+                        <line x1="80" y1="8" x2="60" y2="25" stroke="#D1D1D1" strokeWidth="1" strokeDasharray="2 2"/>
+                      </svg>
+                      <div className="mini-timeline"></div>
+                    </div>
+                    <div className="profiles-box">
+                      <UserProfileIcon />
+                      <span>Human Profiles</span>
+                    </div>
+                  </div>
+                  {/* Arrow */}
+                  <div className="recall-arrow">
+                    <svg viewBox="0 0 32 16" fill="none">
+                      <path d="M0 8H24M24 8L18 3M24 8L18 13" stroke="#D1D1D1" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  {/* Logo */}
+                  <div className="recall-logo">
+                    <img src="/3 Stages/Module Parts/Logo Graphic.svg" alt="OmniMemory" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stage Labels - Isolated at Bottom */}
+          <div className="pipeline-labels">
+            <div className="stage-info">
+              <h4 className="stage-label">{content.steps[0]?.title}</h4>
+              <p className="stage-desc">{content.steps[0]?.description}</p>
+            </div>
+            <div className="stage-info stage-info-enrich">
+              <h4 className="stage-label">{content.steps[1]?.title}</h4>
+              <p className="stage-desc">{content.steps[1]?.description}</p>
+            </div>
+            <div className="stage-info">
+              <h4 className="stage-label">{content.steps[2]?.title}</h4>
+              <p className="stage-desc">{content.steps[2]?.description}</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
+  )
+}
+
+// Icon Components for Process Graph
+function VideoIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 47 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M44.8354 19.9931H14.3534L43.6875 11.0248C44.5053 10.7748 44.9655 9.90916 44.7156 9.0913L42.2711 1.09574C42.1511 0.703023 41.8798 0.374081 41.5173 0.181303C41.1547 -0.0115726 40.7301 -0.0524122 40.3377 0.0676872H40.3376L1.09567 12.0651C0.702859 12.1852 0.374013 12.4563 0.181234 12.819C-0.011544 13.1817 -0.0523836 13.6059 0.067619 13.9986L2.44454 21.7729V44.9458C2.44454 47.4842 4.50984 49.5495 7.04829 49.5495H41.7799C44.3185 49.5495 46.3838 47.4842 46.3838 44.9458V21.5415C46.3838 20.6864 45.6905 19.9931 44.8354 19.9931ZM20.4186 9.39586L27.9854 7.08242L32.9882 11.0575L25.4215 13.3708L20.4186 9.39586ZM21.8267 14.47L14.26 16.7834L9.25711 12.8083L16.8239 10.4948L21.8267 14.47ZM5.66226 13.9074L10.6652 17.8825L5.02092 19.6081L3.48179 14.5741L5.66226 13.9074ZM36.5832 9.95852L31.5803 5.98343L39.7624 3.48196L41.3014 8.51606L36.5832 9.95852ZM43.2869 44.9458C43.2869 45.7767 42.611 46.4527 41.7799 46.4527H7.04829C6.21737 46.4527 5.54138 45.7767 5.54138 44.9458V23.0899H43.2869V44.9458ZM18.8747 41.6146C19.1144 41.7529 19.3816 41.8221 19.649 41.8221C19.9163 41.8221 20.1835 41.7529 20.4232 41.6146L29.9535 36.1123C30.4325 35.8357 30.7277 35.3245 30.7277 34.7714C30.7277 34.2181 30.4325 33.707 29.9535 33.4304L20.4232 27.9281C19.944 27.6516 19.3539 27.6515 18.8747 27.9281C18.3957 28.2047 18.1005 28.716 18.1005 29.2691V40.2738C18.1005 40.8268 18.3956 41.3379 18.8747 41.6146ZM21.1974 31.9508L26.0824 34.7713L21.1974 37.5917V31.9508Z" fill="currentColor"/>
+    </svg>
+  )
+}
+
+function TextIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 6H8C6.34315 6 5 7.34315 5 9V31C5 32.6569 6.34315 34 8 34H32C33.6569 34 35 32.6569 35 31V9C35 7.34315 33.6569 6 32 6Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M11 14H29" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M11 20H29" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M11 26H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function AudioIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 4V36" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M12 10V30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M4 16V24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M28 10V30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M36 16V24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function ActionsIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 8L20 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M20 36L20 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M8 20H4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M36 20H32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <circle cx="20" cy="20" r="8" stroke="currentColor" strokeWidth="2.5"/>
+      <path d="M14 20L18 24L26 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function PersonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+      <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function LocationIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 21C12 21 19 15.5 19 10C19 6.13401 15.866 3 12 3C8.13401 3 5 6.13401 5 10C5 15.5 12 21 12 21Z" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  )
+}
+
+function ObjectIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function AnalyseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
+      <path d="M16 16L20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function ResearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 3H5C3.89543 3 3 3.89543 3 5V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M15 3H19C20.1046 3 21 3.89543 21 5V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M9 21H5C3.89543 21 3 20.1046 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M15 21H19C20.1046 21 21 20.1046 21 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  )
+}
+
+function StudyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3L2 9L12 15L22 9L12 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M2 15L12 21L22 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function ImageAnchorIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+      <path d="M21 15L16 10L6 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function VideoAnchorIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+      <path d="M10 9L15 12L10 15V9Z" fill="currentColor"/>
+    </svg>
+  )
+}
+
+function AudioAnchorIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M8 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M4 10V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M16 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 10V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function UserProfileIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+      <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function AgentIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="agent-gradient" x1="4" y1="24" x2="44" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#01BCB2"/>
+          <stop offset="0.5" stopColor="#9727FF"/>
+          <stop offset="1" stopColor="#002C79"/>
+        </linearGradient>
+      </defs>
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+        <path
+          key={i}
+          d={`M24 24 L${24 + 18 * Math.cos((i * 45 * Math.PI) / 180)} ${24 + 18 * Math.sin((i * 45 * Math.PI) / 180)} Q${24 + 12 * Math.cos(((i * 45 + 22.5) * Math.PI) / 180)} ${24 + 12 * Math.sin(((i * 45 + 22.5) * Math.PI) / 180)} ${24 + 18 * Math.cos(((i + 1) * 45 * Math.PI) / 180)} ${24 + 18 * Math.sin(((i + 1) * 45 * Math.PI) / 180)} Z`}
+          fill="url(#agent-gradient)"
+          opacity={0.7 + (i % 3) * 0.1}
+        />
+      ))}
+    </svg>
+  )
+}
+
+function AgentOrbIcon() {
+  return (
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="orb-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3da6a6"/>
+          <stop offset="50%" stopColor="#754aad"/>
+          <stop offset="100%" stopColor="#471D8F"/>
+        </linearGradient>
+        <linearGradient id="orb-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#0092B8"/>
+          <stop offset="50%" stopColor="#cc3d8f"/>
+          <stop offset="100%" stopColor="#471D8F"/>
+        </linearGradient>
+      </defs>
+      {/* Swirling petals */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => {
+        const angle = (i * 36 * Math.PI) / 180
+        const nextAngle = ((i + 1) * 36 * Math.PI) / 180
+        const innerR = 6
+        const outerR = 20
+        const curveOffset = 8
+        return (
+          <path
+            key={i}
+            d={`M24 24
+               Q${24 + curveOffset * Math.cos(angle + 0.3)} ${24 + curveOffset * Math.sin(angle + 0.3)}
+                ${24 + outerR * Math.cos(angle)} ${24 + outerR * Math.sin(angle)}
+               Q${24 + outerR * Math.cos((angle + nextAngle) / 2)} ${24 + outerR * Math.sin((angle + nextAngle) / 2)}
+                ${24 + outerR * Math.cos(nextAngle)} ${24 + outerR * Math.sin(nextAngle)}
+               Q${24 + curveOffset * Math.cos(nextAngle - 0.3)} ${24 + curveOffset * Math.sin(nextAngle - 0.3)}
+                24 24 Z`}
+            fill={i % 2 === 0 ? "url(#orb-grad-1)" : "url(#orb-grad-2)"}
+            opacity={0.6 + (i % 3) * 0.12}
+          />
+        )
+      })}
+    </svg>
   )
 }
 
@@ -862,7 +1350,7 @@ function FooterSection({ content }: { content: FooterContent }) {
 
           <div className="footer-links-col">
             <h4 className="footer-col-title">CONTACT</h4>
-            <a href="mailto:contact@omnimemory.ai" className="footer-link-v2">E. contact@omnimemory.ai</a>
+            <a href="mailto:alice@omnimemory.ai" className="footer-link-v2">E. alice@omnimemory.ai</a>
             <a href="https://omnimemory.ai" className="footer-link-v2">W. omnimemory.ai</a>
           </div>
         </div>

@@ -2839,6 +2839,15 @@ section {
   box-shadow: 0 8px 32px rgba(var(--ink), 0.06);
 }
 
+/* Demo content when showing video demo - remove padding and constraints */
+.demo-content:has(> [data-demo-component]) {
+  padding: 0;
+  min-height: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 .demo-content-title {
   font-family: var(--font-serif);
   font-size: 2.1875rem; /* 35pt H3 */
@@ -2912,6 +2921,60 @@ section {
 
 .demo-section-placeholder .placeholder-inner {
   min-height: 350px;
+}
+
+/* ============================================
+   MEMORY DEMO COMPONENT STYLES
+   ============================================ */
+
+/* Typing cursor animation - Brand Teal */
+.typing-cursor::after {
+  content: '▋';
+  animation: blink-cursor 1s step-start infinite;
+  color: rgb(var(--teal));
+  margin-left: 2px;
+}
+
+@keyframes blink-cursor {
+  50% { opacity: 0; }
+}
+
+/* Custom scrollbar for demo components */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--ink-muted));
+  border-radius: 9999px;
+  opacity: 0.3;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--ink-muted));
+  opacity: 0.5;
+}
+
+/* Demo content adjustments when showing full demo */
+.demo-content:has(> [data-demo-component]) {
+  padding: 0;
+  min-height: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+@media (max-width: 768px) {
+  .demo-content:has(> [data-demo-component]) {
+    padding: 0;
+  }
 }
 
 /* Enterprise Section Placeholder */
@@ -3536,6 +3599,587 @@ section {
   background: rgb(var(--teal));
   border-color: rgb(var(--teal));
   color: rgb(var(--ivory));
+}
+
+/* ============ PIPELINE (HOW IT WORKS) ============ */
+.process-section {
+  background: rgb(var(--ivory));
+}
+
+/* Main Pipeline Layout */
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding: 1rem 0;
+}
+
+/* Cards Row */
+.pipeline-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pipeline-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pipeline-stage-enrich {
+  flex: 1.5;
+  max-width: 560px;
+}
+
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+
+.pipeline-arrow svg {
+  width: 40px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+/* Labels Row - Isolated at Bottom */
+.pipeline-labels {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.stage-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 280px;
+}
+
+.stage-info-enrich {
+  flex: 1.5;
+  max-width: 560px;
+}
+
+/* Cards */
+.card {
+  background: rgba(var(--ivory-dark), 0.5);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  padding: 1.25rem;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Stage Labels */
+.stage-label {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0c183d;
+  margin-top: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.stage-desc {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  color: rgba(var(--ink), 0.55);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* ============ INGEST CARD ============ */
+.card-ingest {
+  width: 220px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(rgb(var(--ivory-dark)), rgb(var(--ivory-dark))) padding-box,
+    linear-gradient(135deg, rgba(61, 166, 166, 0.5) 0%, rgba(71, 29, 143, 0.4) 100%) border-box;
+}
+
+.ingest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.input-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.375rem;
+  background: rgb(var(--ivory));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.input-box::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 11px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(61, 166, 166, 0.2) 0%, rgba(71, 29, 143, 0.15) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.input-box svg {
+  width: 32px;
+  height: 32px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.input-box span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.input-active::before {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(61, 166, 166, 0.5) 0%, rgba(71, 29, 143, 0.35) 100%);
+}
+
+.input-active svg {
+  color: #3da6a6;
+}
+
+/* ============ ENRICH CARD ============ */
+.card-enrich {
+  padding: 0.75rem;
+  min-height: 180px;
+  background:
+    linear-gradient(rgb(var(--ivory-dark)), rgb(var(--ivory-dark))) padding-box,
+    linear-gradient(135deg, rgba(61, 166, 166, 0.45) 0%, rgba(71, 29, 143, 0.4) 100%) border-box;
+}
+
+/* Enrich Content - horizontal layout */
+.enrich-content {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 160px;
+}
+
+/* Left side: Graph with nodes and edges */
+.enrich-graph {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  padding: 0.25rem 0;
+}
+
+/* Connecting arrows */
+.enrich-arrows {
+  display: flex;
+  align-items: center;
+  width: 18px;
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+}
+
+.enrich-arrows svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Right side: Layer labels */
+.enrich-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+}
+
+.layer-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layer-label img {
+  width: 95px;
+  height: auto;
+}
+
+.layer-label span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: #000000;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Knowledge Graph Nodes */
+.kg-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Cognition row: 4 nodes = 4*32 + 3*8 = 152px */
+.kg-row-cognition {
+  width: 152px;
+}
+
+/* Perception row: 5 nodes = 5*32 + 4*8 = 192px */
+.kg-row-perception {
+  width: 192px;
+}
+
+.kg-node {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--ivory));
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.kg-node svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.kg-node-active {
+  border-color: rgba(61, 166, 166, 0.5);
+}
+
+.kg-node-active svg {
+  color: #3da6a6;
+}
+
+/* Knowledge Graph Edges - positioned between node rows */
+.kg-edges {
+  width: 192px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+/* Vertical arrows from perception to timeline */
+.kg-vertical-arrows {
+  width: 100%;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Timeline using SVG asset */
+.kg-timeline {
+  width: 100%;
+  margin-top: 0;
+}
+
+.timeline-svg {
+  width: 100%;
+  height: auto;
+  max-height: 45px;
+  object-fit: contain;
+}
+
+/* ============ RECALL CARD ============ */
+.card-recall {
+  width: 240px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(rgb(var(--ivory-dark)), rgb(var(--ivory-dark))) padding-box,
+    linear-gradient(135deg, rgba(71, 29, 143, 0.35) 0%, rgba(61, 166, 166, 0.25) 100%) border-box;
+}
+
+.recall-layout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recall-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+/* Mini Knowledge Graph */
+.mini-kg {
+  background: rgb(var(--ivory));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 0.5rem;
+  position: relative;
+}
+
+.mini-kg-nodes {
+  display: flex;
+  justify-content: space-around;
+  gap: 0.375rem;
+}
+
+.mini-node {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--ivory));
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+}
+
+.mini-node svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.mini-node-active {
+  border-color: rgba(61, 166, 166, 0.5);
+}
+
+.mini-node-active svg {
+  color: #3da6a6;
+}
+
+.mini-kg-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mini-timeline {
+  height: 3px;
+  margin-top: 0.375rem;
+  background: linear-gradient(90deg, rgba(0,0,0,0.05) 0%, rgba(61,166,166,0.4) 50%, rgba(0,0,0,0.05) 100%);
+  border-radius: 2px;
+}
+
+/* Profiles Box */
+.profiles-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  background: rgb(var(--ivory));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+}
+
+.profiles-box svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(71, 29, 143, 0.7);
+}
+
+.profiles-box span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* Recall Arrow */
+.recall-arrow {
+  display: flex;
+  align-items: center;
+}
+
+.recall-arrow svg {
+  width: 32px;
+  height: 16px;
+  opacity: 0.5;
+}
+
+/* Recall Logo */
+.recall-logo img {
+  width: 72px;
+  height: 72px;
+  animation: spin 12s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============ PIPELINE RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .pipeline-cards {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .pipeline-stage,
+  .pipeline-stage-enrich {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .pipeline-arrow {
+    transform: rotate(90deg);
+    padding: 0.25rem 0;
+  }
+
+  .card-ingest,
+  .card-recall {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .card-enrich {
+    min-height: auto;
+  }
+
+  .enrich-content {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .enrich-graph {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.25rem;
+  }
+
+  .enrich-arrows {
+    display: none;
+  }
+
+  .kg-vertical-arrows {
+    height: 8px;
+  }
+
+  .enrich-labels {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0.5rem 0 0 0;
+    gap: 0.25rem;
+  }
+
+  .layer-label img {
+    width: 90px;
+  }
+  
+  .kg-timeline {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .recall-layout {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recall-left {
+    width: 100%;
+  }
+
+  .recall-arrow {
+    transform: rotate(90deg);
+  }
+
+  .pipeline-labels {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .stage-info,
+  .stage-info-enrich {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 600px) {
+  .pipeline-cards {
+    gap: 0.75rem;
+  }
+
+  .card {
+    padding: 0.625rem;
+  }
+
+  .stage-label {
+    font-size: 0.875rem;
+  }
+
+  .stage-desc {
+    font-size: 0.75rem;
+    max-width: 180px;
+  }
+
+  .kg-node {
+    width: 28px;
+    height: 28px;
+  }
+
+  .kg-node svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .layer-label img {
+    width: 70px;
+  }
+
+  .layer-label span {
+    font-size: 0.45rem;
+  }
+  
+  .kg-vertical-arrows {
+    height: 6px;
+  }
+  
+  .recall-logo img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .timeline-svg {
+    max-height: 40px;
+  }
 }
 
 /* ============ FEATURES GRID V2 ============ */

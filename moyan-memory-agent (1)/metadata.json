@@ -1,0 +1,5 @@
+{
+  "name": "Moyan Memory Agent",
+  "description": "A sophisticated demonstration of a multimodal memory agent. It features video analysis, knowledge graph construction, and a chat interface that retrieves memory with visualized reasoning traces.",
+  "requestFramePermissions": []
+}

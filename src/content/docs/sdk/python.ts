@@ -402,6 +402,33 @@ for e in history:
       ],
     },
     {
+      id: 'video-sdk',
+      heading: {
+        en: 'Video SDK (Coming Soon)',
+        zh: '视频 SDK（即将推出）',
+      },
+      content: {
+        en: `**Status: Currently Unavailable**
+
+The Python SDK will support video ingestion and search in a future release. This feature will enable you to:
+
+- **Ingest video content** - Extract and store memories from video files
+- **Search video memories** - Query video content using natural language
+- **Multimodal memory** - Combine text conversations with video context
+
+Stay tuned for updates. Video SDK support is under active development.`,
+        zh: `**状态：暂不可用**
+
+Python SDK 将在未来版本中支持视频导入和搜索功能。该功能将使您能够：
+
+- **导入视频内容** - 从视频文件中提取并存储记忆
+- **搜索视频记忆** - 使用自然语言查询视频内容
+- **多模态记忆** - 将文本对话与视频上下文相结合
+
+敬请期待更新。视频 SDK 支持正在积极开发中。`,
+      },
+    },
+    {
       id: 'next-steps',
       heading: {
         en: 'Next Steps',
