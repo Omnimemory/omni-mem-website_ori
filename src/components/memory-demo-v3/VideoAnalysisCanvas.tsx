@@ -60,8 +60,8 @@ export function VideoAnalysisCanvas({ currentTime, detections, isPlaying }: Vide
 
   const getDetectionIcon = (type: Detection['type']) => {
     switch (type) {
-      case 'person': return User;
-      case 'location': return MapPin;
+      case 'face': return User;
+      case 'scene': return MapPin;
       case 'object': return Coffee;
       case 'speech': return MessageSquare;
       case 'action': return Activity;
@@ -71,10 +71,10 @@ export function VideoAnalysisCanvas({ currentTime, detections, isPlaying }: Vide
 
   const getDetectionColor = (type: Detection['type']) => {
     switch (type) {
-      case 'person': return '#3da6a6'; // Teal
-      case 'location': return '#cc3d8f'; // Magenta
+      case 'face': return '#3da6a6'; // Teal
+      case 'scene': return '#cc3d8f'; // Magenta
       case 'object': return '#754aad'; // Violet
-      case 'utterance': return '#0092B8'; // Cyan
+      case 'speech': return '#0092B8'; // Cyan
       case 'action': return '#0080c9'; // Azure
       default: return '#C0C0C0';
     }
