@@ -75,7 +75,7 @@ export function UserFeedbackWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="feedback-widget fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {isOpen ? (
         <Card className="w-[320px] border border-ink/10 bg-white/95 shadow-xl">
           <CardHeader className="flex items-start justify-between gap-3">
