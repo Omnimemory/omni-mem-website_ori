@@ -224,6 +224,9 @@ function formatUsageMethod(eventName: string) {
   if (eventName === 'upload_processed') {
     return '上传处理'
   }
+  if (eventName === 'storage_daily') {
+    return '存储计量'
+  }
   if (!eventName) {
     return '未知'
   }

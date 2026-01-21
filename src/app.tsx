@@ -24,6 +24,7 @@ export function App() {
     getRouteFromPathname({ pathname: getBrowserPathname() })
   )
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isWechatOpen, setIsWechatOpen] = useState(false)
   const content = contentByLocale[locale]
   const { session, isLoading: isSessionLoading } = useSupabaseSession()
   const accountDisplayName =
@@ -302,6 +303,39 @@ export function App() {
         </main>
       )}
       <Analytics />
+      <div className={`wechat-fab ${isWechatOpen ? 'open' : ''}`}>
+        <button
+          type="button"
+          className="wechat-fab-button"
+          onClick={() => setIsWechatOpen((prev) => !prev)}
+          aria-expanded={isWechatOpen}
+          aria-controls="wechat-qr-panel"
+        >
+          加入微信群讨论
+        </button>
+        <div
+          id="wechat-qr-panel"
+          className="wechat-fab-panel"
+          role="dialog"
+          aria-hidden={!isWechatOpen}
+        >
+          <div className="wechat-fab-card">
+            <div className="wechat-fab-header">
+              <span className="wechat-fab-title">扫码加入微信群</span>
+              <button
+                type="button"
+                className="wechat-fab-close"
+                onClick={() => setIsWechatOpen(false)}
+                aria-label="Close"
+              >
+                X
+              </button>
+            </div>
+            <img src="/QRcode.jpg" alt="WeChat QR code" className="wechat-fab-image" />
+            <p className="wechat-fab-caption">打开微信扫一扫，加入讨论</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

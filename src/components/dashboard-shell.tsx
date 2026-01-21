@@ -268,6 +268,29 @@ export function DashboardShell({
               collapsed={isCollapsed}
             />
             {error ? <p className="mt-4 text-xs text-red-600">{error}</p> : null}
+            {session ? (
+              <div
+                className={`mt-4 border-t border-ink/10 pt-4 ${
+                  isCollapsed ? 'flex justify-center' : ''
+                }`}
+              >
+                <button
+                  type="button"
+                  className={`flex items-center rounded-md transition-colors ${
+                    isCollapsed
+                      ? 'h-10 w-10 justify-center bg-deep-blue text-ivory hover:bg-teal'
+                      : 'w-full gap-2 bg-deep-blue px-3 py-2 text-xs font-semibold text-ivory hover:bg-teal'
+                  }`}
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className={isCollapsed ? 'sr-only' : ''}>
+                    {isSigningOut ? labels.signingOut : labels.signOut}
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </aside>
         <main className="min-w-0 flex-1">
