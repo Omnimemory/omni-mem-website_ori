@@ -5166,13 +5166,13 @@ section {
    ============================================ */
 
 .feedback-widget {
-  bottom: calc(1.5rem + 200px);
+  bottom: calc(1.5rem + 64px);
   right: 1.5rem;
 }
 
 @media (max-width: 640px) {
   .feedback-widget {
-    bottom: calc(1rem + 175px);
+    bottom: calc(1rem + 56px);
   }
 }
 
