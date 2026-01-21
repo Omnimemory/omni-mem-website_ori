@@ -5035,7 +5035,7 @@ section {
 
 .wechat-fab {
   position: fixed;
-  right: 1.5rem;
+  right: 4.5rem;
   bottom: 1.5rem;
   z-index: 60;
   display: flex;
@@ -5142,7 +5142,7 @@ section {
 
 @media (max-width: 640px) {
   .wechat-fab {
-    right: 1rem;
+    right: 3.5rem;
     bottom: 1rem;
   }
 
