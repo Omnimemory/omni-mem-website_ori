@@ -52,18 +52,29 @@ export function SignUpPage({ signInPath, dashboardPath, onNavigate }: SignUpPage
     setErrorMessage(null)
     setSuccessMessage(null)
     try {
-      const { error: otpError } = await client.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
+      if (step === 'verify') {
+        const { error: resendError } = await client.auth.resend({
+          type: 'signup',
+          email,
           ...(signInRedirectUrl ? { emailRedirectTo: signInRedirectUrl } : {}),
-          data: {
-            name: trimmedUsername,
+        })
+        if (resendError) {
+          throw new Error(resendError.message)
+        }
+      } else {
+        const { error: signUpError } = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            ...(signInRedirectUrl ? { emailRedirectTo: signInRedirectUrl } : {}),
+            data: {
+              name: trimmedUsername,
+            },
           },
-        },
-      })
-      if (otpError) {
-        throw new Error(otpError.message)
+        })
+        if (signUpError) {
+          throw new Error(signUpError.message)
+        }
       }
 
       setStep('verify')
