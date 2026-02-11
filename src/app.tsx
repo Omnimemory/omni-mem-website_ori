@@ -470,7 +470,7 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
               <p className="benchmark-modality-desc">Long-context conversation memory evaluation with multi-hop reasoning</p>
               <div className="benchmark-modality-stats">
                 <div className="benchmark-stat">
-                  <span className="benchmark-stat-value">77.8%</span>
+                  <span className="benchmark-stat-value">93.50%</span>
                   <span className="benchmark-stat-label">J-Score Accuracy</span>
                 </div>
                 <div className="benchmark-stat">
@@ -490,32 +490,32 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
                 <div className="chart-bar-group">
                   <div className="chart-bar-label">Omni Memory</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-primary" style={{ width: '77.8%' }}>
-                      <span className="chart-bar-value">77.8%</span>
+                    <div className="chart-bar chart-bar-primary" style={{ width: '93.50%' }}>
+                      <span className="chart-bar-value">93.50%</span>
                     </div>
                   </div>
                 </div>
                 <div className="chart-bar-group">
-                  <div className="chart-bar-label">GPT-4 + RAG</div>
+                  <div className="chart-bar-label">memU（official）</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-secondary" style={{ width: '62%' }}>
-                      <span className="chart-bar-value">62%</span>
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '88.20%' }}>
+                      <span className="chart-bar-value">88.20%</span>
                     </div>
                   </div>
                 </div>
                 <div className="chart-bar-group">
-                  <div className="chart-bar-label">Claude + RAG</div>
+                  <div className="chart-bar-label">MemOS</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-secondary" style={{ width: '58%' }}>
-                      <span className="chart-bar-value">58%</span>
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '75.80%' }}>
+                      <span className="chart-bar-value">75.80%</span>
                     </div>
                   </div>
                 </div>
                 <div className="chart-bar-group">
-                  <div className="chart-bar-label">MemGPT</div>
+                  <div className="chart-bar-label">Membase</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-secondary" style={{ width: '45%' }}>
-                      <span className="chart-bar-value">45%</span>
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '75.80%' }}>
+                      <span className="chart-bar-value">75.80%</span>
                     </div>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
                   <span className="benchmark-stat-label">Session Assistant</span>
                 </div>
                 <div className="benchmark-stat">
-                  <span className="benchmark-stat-value">86.8%</span>
+                  <span className="benchmark-stat-value">97.3%</span>
                   <span className="benchmark-stat-label">Temporal Reasoning</span>
                 </div>
               </div>
@@ -551,24 +551,32 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
                 <div className="chart-bar-group">
                   <div className="chart-bar-label">Omni Memory</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-primary" style={{ width: '82%' }}>
-                      <span className="chart-bar-value">82%</span>
+                    <div className="chart-bar chart-bar-primary" style={{ width: '82.00%' }}>
+                      <span className="chart-bar-value">82.00%</span>
                     </div>
                   </div>
                 </div>
                 <div className="chart-bar-group">
-                  <div className="chart-bar-label">Mem0</div>
+                  <div className="chart-bar-label">MemOS</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-secondary" style={{ width: '66.4%' }}>
-                      <span className="chart-bar-value">66.4%</span>
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '77.80%' }}>
+                      <span className="chart-bar-value">77.80%</span>
                     </div>
                   </div>
                 </div>
                 <div className="chart-bar-group">
-                  <div className="chart-bar-label">Zep</div>
+                  <div className="chart-bar-label">Membase</div>
                   <div className="chart-bar-container">
-                    <div className="chart-bar chart-bar-secondary" style={{ width: '63.8%' }}>
-                      <span className="chart-bar-value">63.8%</span>
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '72.4%' }}>
+                      <span className="chart-bar-value">72.4%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="chart-bar-group">
+                  <div className="chart-bar-label">memU</div>
+                  <div className="chart-bar-container">
+                    <div className="chart-bar chart-bar-secondary" style={{ width: '38.40%' }}>
+                      <span className="chart-bar-value">38.40%</span>
                     </div>
                   </div>
                 </div>
