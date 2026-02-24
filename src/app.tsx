@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { DashboardShell, type DashboardLink } from './components/dashboard-shell'
 import { useSupabaseSession } from './hooks/use-supabase-session'
 import { MemoryPlayerV3 } from './components/memory-demo-v3'
+import { TextMemoryConversationDemo } from './components/text-memory-demo'
 import { DashboardPage } from './pages/dashboard'
 import { ApiKeysPage } from './pages/api-keys'
 import { UploadsPage } from './pages/uploads'
@@ -234,7 +235,7 @@ export function App() {
       {isMarketing ? (
         <main>
           <HeroSection content={content.hero} />
-          <DemoSection />
+          <DemoSection locale={locale} />
           <HowItWorksSection content={content.howItWorks} />
           <BenchmarkSection content={content.stats} />
           <DevelopersSection content={content.developers} />
@@ -365,7 +366,7 @@ function HeroSection({ content }: { content: HeroContent }) {
 }
 
 // ============ DEMO SECTION (PLACEHOLDER) ============
-function DemoSection() {
+function DemoSection({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<'conversation' | 'video'>('conversation')
 
   return (
@@ -390,16 +391,7 @@ function DemoSection() {
           {activeTab === 'video' ? (
             <MemoryPlayerV3 />
           ) : (
-            <>
-              <h3 className="demo-content-title">
-                Interactive Demo
-              </h3>
-              <div className="demo-placeholder">
-                <p className="demo-placeholder-text">
-                  Experience Omni Memory in action. Interactive demo coming soon.
-                </p>
-              </div>
-            </>
+            <TextMemoryConversationDemo locale={locale} />
           )}
         </div>
       </div>
