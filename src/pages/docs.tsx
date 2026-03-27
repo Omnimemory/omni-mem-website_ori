@@ -7,6 +7,7 @@ import {
   setupGuidePage,
   agentIntegrationPage,
   multiSpeakerPage,
+  openClawPluginPage,
   pipelinesPage,
   errorsPage,
   limitsPage,
@@ -31,6 +32,7 @@ const pageMap: Record<string, DocPage> = {
   'sdk/javascript': javascriptSdkPage,
   'concepts': conceptsPage,
   'guides/agent': agentIntegrationPage,
+  'guides/openclaw-memory-plugin': openClawPluginPage,
   'guides/multi-speaker': multiSpeakerPage,
   'pipelines': pipelinesPage,
   'reference/errors': errorsPage,
@@ -45,6 +47,7 @@ const pageOrder = [
   'concepts',
   'pipelines',
   'guides/agent',
+  'guides/openclaw-memory-plugin',
   'guides/multi-speaker',
   'reference/errors',
   'reference/limits',
@@ -272,10 +275,15 @@ export function DocsPage({ locale, onNavigate, onLocaleToggle }: DocsPageProps) 
                   {section.items.map((item, j) => {
                     const slug = item.href.replace('/docs/', '')
                     const active = slug === currentSlug || (item.href === '/docs/sdk/python' && currentSlug === 'sdk/python')
+                    const isOpenClawDoc = item.href === '/docs/guides/openclaw-memory-plugin'
                     return (
                       <li key={j}>
                         <a href={item.href} onClick={(e) => { e.preventDefault(); handleNavClick(item.href) }} className={active ? 'active' : ''}>
-                          {t(item.title)}
+                          {isOpenClawDoc ? (
+                            <span style={{ color: '#d14b57', fontWeight: 700 }}>{t(item.title)}</span>
+                          ) : (
+                            t(item.title)
+                          )}
                         </a>
                         {item.items && (
                           <ul className="mintlify-nav-sub">
@@ -446,7 +454,11 @@ function DocContent({ page, locale, slug, onNav }: { page: DocPage; locale: Loca
               <a href={`#${section.id}`} className="mintlify-anchor">#</a>
               {t(section.heading)}
             </h2>
-            <Prose content={t(section.content)} onNav={onNav} />
+            <Prose
+              content={t(section.content)}
+              onNav={onNav}
+              className={slug === 'guides/openclaw-memory-plugin' ? 'plugin-guide-prose' : undefined}
+            />
             {section.codeExamples && section.codeExamples.length > 0 && (
               <CodeTabs examples={section.codeExamples} />
             )}
@@ -539,7 +551,7 @@ function NotFound({ slug, onNav }: { slug: string; onNav: (h: string) => void })
   )
 }
 
-function Prose({ content, onNav }: { content: string; onNav?: (href: string) => void }) {
+function Prose({ content, onNav, className }: { content: string; onNav?: (href: string) => void; className?: string }) {
   // Better markdown parser
   const parseMarkdown = (text: string): string => {
     let html = text
@@ -594,6 +606,7 @@ function Prose({ content, onNav }: { content: string; onNav?: (href: string) => 
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
 
     // Headers
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>')
     html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>')
     html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>')
     html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -686,7 +699,7 @@ function Prose({ content, onNav }: { content: string; onNav?: (href: string) => 
 
   return (
     <div
-      className="mintlify-prose"
+      className={className ? `mintlify-prose ${className}` : 'mintlify-prose'}
       dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
       onClick={handleClick}
     />

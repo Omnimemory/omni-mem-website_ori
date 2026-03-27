@@ -17,6 +17,7 @@ import { PasswordResetPage } from './pages/auth/password-reset'
 import { UpdatePasswordPage } from './pages/auth/update-password'
 import { DocsPage } from './pages/docs'
 import { FaqPage } from './pages/faq'
+import { OpenClawMemoryPluginPage } from './pages/openclaw-memory-plugin'
 
 export function App() {
   const [locale, setLocale] = useState<Locale>(() => getPreferredLocale())
@@ -26,6 +27,7 @@ export function App() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isWechatOpen, setIsWechatOpen] = useState(false)
   const content = contentByLocale[locale]
+  const navbarLinks = getMarketingNavLinks({ navLinks: content.navbar.navLinks, locale })
   const { session, isLoading: isSessionLoading } = useSupabaseSession()
   const accountDisplayName =
     session?.user?.user_metadata?.name ??
@@ -43,6 +45,8 @@ export function App() {
   const profilePath = buildLocalePathname({ pathname: ROUTE_PATHS.profile, locale })
   const homePath = '/'
   const isMarketing = routeKey === 'marketing'
+  const isOpenClawMemoryPlugin = routeKey === 'openclawPlugin'
+  const isPublicMarketingRoute = isMarketing || isOpenClawMemoryPlugin
   const isDocs = routeKey === 'docs'
   const isProtectedRoute = ['dashboard', 'apiKeys', 'uploads', 'usage', 'memoryPolicy', 'profile'].includes(routeKey)
 
@@ -162,14 +166,14 @@ export function App() {
 
   const mainClassName = isProtectedRoute
     ? 'min-h-[70vh]'
-    : isDocs
+    : isDocs || isOpenClawMemoryPlugin
       ? 'min-h-[70vh] pt-0'
       : 'min-h-[70vh] px-6 pb-24 pt-28 sm:px-8'
 
   return (
     <div className="min-h-screen bg-white">
       {/* Announcement Bar */}
-      {isMarketing && (
+      {isPublicMarketingRoute && (
         <div className="announcement-bar">
           <span>UPCOMING UPDATE: OmniMemory 1.1</span>
         </div>
@@ -183,9 +187,9 @@ export function App() {
             <span>OmniMemory</span>
           </a>
 
-          {isMarketing && (
+          {isPublicMarketingRoute && (
             <div className="nav-links-v2">
-              {content.navbar.navLinks.map((link) => (
+              {navbarLinks.map((link) => (
                 link.dropdown ? (
                   <div key={link.label} className="navbar-dropdown">
                     <button className="nav-link-v2 dropdown-trigger">
@@ -214,12 +218,12 @@ export function App() {
             <button onClick={handleLocaleToggle} className="lang-toggle-v2">
               {locale === 'en' ? '中文' : 'EN'}
             </button>
-            {isMarketing && (
+            {isPublicMarketingRoute && (
               <a href="/dashboard" className="btn-primary btn-nav">
                 {content.navbar.ctaLabel}
               </a>
             )}
-            {!isMarketing && session ? (
+            {!isPublicMarketingRoute && session ? (
               <div className="hidden flex-col items-end text-xs text-ink/60 sm:flex">
                 <span className="font-semibold text-ink">
                   {accountDisplayName ?? '账户'}
@@ -231,19 +235,29 @@ export function App() {
         </div>
       </nav>
 
-      {isMarketing ? (
+      {isPublicMarketingRoute ? (
         <main>
-          <HeroSection content={content.hero} />
-          <DemoSection />
-          <HowItWorksSection content={content.howItWorks} />
-          <BenchmarkSection content={content.stats} />
-          <DevelopersSection content={content.developers} />
-          <EnterpriseSection content={content.features} />
-          <TestimonialsSection content={content.testimonials} />
-          <PartnersMarquee content={content.partners} />
-          <PricingSection content={content.pricing} />
-          <CtaSection content={content.cta} />
-          <FooterSection content={content.footer} />
+          {isMarketing ? (
+            <>
+              <HeroSection content={content.hero} />
+              <NewsSection locale={locale} />
+              <DemoSection />
+              <HowItWorksSection content={content.howItWorks} />
+              <BenchmarkSection content={content.stats} />
+              <DevelopersSection content={content.developers} />
+              <EnterpriseSection content={content.features} />
+              <TestimonialsSection content={content.testimonials} />
+              <PartnersMarquee content={content.partners} />
+              <PricingSection content={content.pricing} />
+              <CtaSection content={content.cta} />
+              <FooterSection content={content.footer} />
+            </>
+          ) : (
+            <>
+              <OpenClawMemoryPluginPage locale={locale} onNavigate={navigateTo} />
+              <FooterSection content={content.footer} />
+            </>
+          )}
         </main>
       ) : (
         <main className={mainClassName}>
@@ -358,6 +372,66 @@ function HeroSection({ content }: { content: HeroContent }) {
         <div className="hero-v2-ctas">
           <a href="/dashboard" className="btn-primary">{content.primaryCta}</a>
           <a href="/docs" className="btn-secondary">{content.secondaryCta}</a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function NewsSection({ locale }: { locale: Locale }) {
+  const content = locale === 'en' ? {
+    eyebrow: 'Recent News',
+    title: 'Hot Release: OpenClaw Memory Plugin 🔥',
+    description: 'A new OpenClaw solution is now live. Long-term memory, automatic recall, and secure OmniMemory SaaS integration are bundled into one focused release for agent teams.',
+    cta: 'View OpenClaw Solution',
+    href: '/solutions/openclaw-memory-plugin',
+  } : {
+    eyebrow: '近期新闻',
+    title: '重磅发布：OpenClaw记忆插件 🔥',
+    description: 'OpenClaw 新解决方案已正式上线。长期记忆、自动回忆和 OmniMemory SaaS 安全接入，现在作为一个完整产品能力集中发布。',
+    cta: '查看 OpenClaw 解决方案',
+    href: '/zh/solutions/openclaw-memory-plugin',
+  }
+
+  return (
+    <section className="bg-white px-6 py-10 sm:px-8">
+      <div
+        className="container-v2 overflow-hidden rounded-[34px] border p-4 shadow-[0_26px_80px_rgba(12,24,61,0.08)] lg:p-5"
+        style={{ borderColor: 'rgba(var(--ink), 0.08)', background: 'linear-gradient(135deg, rgba(12, 24, 61, 0.04) 0%, rgba(61, 166, 166, 0.08) 100%)' }}
+      >
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-center">
+          <div className="space-y-5 px-4 py-5 sm:px-8">
+            <p className="module-eyebrow text-left">{content.eyebrow}</p>
+            <h2 className="module-title text-left">
+              {locale === 'zh' ? (
+                <>
+                  <span className="block">重磅发布：</span>
+                  <span className="block whitespace-nowrap">OpenClaw记忆插件 🔥</span>
+                </>
+              ) : (
+                content.title
+              )}
+            </h2>
+            <p className="max-w-2xl text-base leading-8 text-[rgb(var(--ink)/0.76)] sm:text-lg">
+              {content.description}
+            </p>
+            <a href={content.href} className="btn-primary inline-flex">
+              {content.cta}
+            </a>
+          </div>
+          <div
+            className="overflow-hidden rounded-[28px] border p-4"
+            style={{
+              borderColor: 'rgba(var(--ink), 0.08)',
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 248, 252, 1) 100%)',
+            }}
+          >
+            <img
+              src="/news/poster_top.jpg"
+              alt="OpenClaw release poster"
+              className="max-h-[420px] w-full object-contain"
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -1459,10 +1533,34 @@ function buildLocalePathname({ pathname, locale }: { pathname: string; locale: L
   return `/${locale}${pathname}`
 }
 
+function getMarketingNavLinks({ navLinks, locale }: { navLinks: NavLink[]; locale: Locale }) {
+  return navLinks.map((link) => {
+    if (!link.dropdown) return link
+
+    const hasOpenClawLink = link.dropdown.some((item) => item.href === ROUTE_PATHS.openclawPlugin)
+    const isPlaceholderSolutionsMenu = link.dropdown.length > 0 &&
+      link.dropdown.every((item) => item.href === '#' || item.href === ROUTE_PATHS.openclawPlugin)
+
+    if (hasOpenClawLink || !isPlaceholderSolutionsMenu) return link
+
+    return {
+      ...link,
+      dropdown: [
+        ...link.dropdown,
+        {
+          label: locale === 'zh' ? 'OpenClaw记忆插件 🔥' : 'OpenClaw Memory Plugin 🔥',
+          href: ROUTE_PATHS.openclawPlugin,
+        },
+      ],
+    }
+  })
+}
+
 function getRouteFromPathname({ pathname }: { pathname: string }): RouteKey {
   const strippedPath = stripLocaleFromPathname({ pathname })
   if (strippedPath.startsWith(ROUTE_PATHS.docs)) return 'docs'
   if (strippedPath.startsWith(ROUTE_PATHS.faq)) return 'faq'
+  if (strippedPath.startsWith(ROUTE_PATHS.openclawPlugin)) return 'openclawPlugin'
   if (strippedPath.startsWith(ROUTE_PATHS.apiKeys)) return 'apiKeys'
   if (strippedPath.startsWith(ROUTE_PATHS.uploads)) return 'uploads'
   if (strippedPath.startsWith(ROUTE_PATHS.usage)) return 'usage'
@@ -1554,6 +1652,7 @@ const ROUTE_PATHS = {
   home: '/',
   docs: '/docs',
   faq: '/faq',
+  openclawPlugin: '/solutions/openclaw-memory-plugin',
   dashboard: '/dashboard',
   apiKeys: '/dashboard/api-keys',
   uploads: '/dashboard/uploads',
@@ -1624,11 +1723,12 @@ const contentByLocale: Record<Locale, AppContent> = {
           ]
         },
         {
-          label: 'Solutions',
+          label: 'Solutions 🔥',
           dropdown: [
             { label: 'AI Companion Robot', href: '#' },
             { label: 'Chatbot', href: '#' },
             { label: 'Robotics', href: '#' },
+            { label: 'OpenClaw Memory Plugin 🔥', href: '/solutions/openclaw-memory-plugin' },
           ]
         },
         { label: 'Research', href: '/research' },
@@ -1759,7 +1859,7 @@ const contentByLocale: Record<Locale, AppContent> = {
           ],
         },
         {
-          label: '解决方案',
+          label: '解决方案 🔥',
           dropdown: [
             { label: 'AI 伴侣机器人', href: '#' },
             { label: '聊天机器人', href: '#' },
@@ -1889,6 +1989,7 @@ type RouteKey =
   | 'marketing'
   | 'docs'
   | 'faq'
+  | 'openclawPlugin'
   | 'dashboard'
   | 'apiKeys'
   | 'uploads'
