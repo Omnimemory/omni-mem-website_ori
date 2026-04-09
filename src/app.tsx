@@ -27,6 +27,10 @@ export function App() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isWechatOpen, setIsWechatOpen] = useState(false)
   const content = contentByLocale[locale]
+  const homepageCompanyName =
+    locale === 'zh'
+      ? '丘脑智能科技（深圳）有限公司'
+      : 'OmniMemory Intelligence Technology (Shenzhen) Co., Ltd.'
   const navbarLinks = getMarketingNavLinks({ navLinks: content.navbar.navLinks, locale })
   const { session, isLoading: isSessionLoading } = useSupabaseSession()
   const accountDisplayName =
@@ -250,7 +254,7 @@ export function App() {
               <PartnersMarquee content={content.partners} />
               <PricingSection content={content.pricing} />
               <CtaSection content={content.cta} />
-              <FooterSection content={content.footer} />
+              <FooterSection content={content.footer} companyName={homepageCompanyName} />
             </>
           ) : (
             <>
@@ -1434,7 +1438,7 @@ function CtaSection({ content }: { content: CtaContent }) {
 }
 
 // ============ FOOTER SECTION ============
-function FooterSection({ content }: { content: FooterContent }) {
+function FooterSection({ content, companyName }: { content: FooterContent; companyName?: string }) {
   return (
     <footer className="footer-v2">
       <div className="container-v2">
@@ -1499,7 +1503,12 @@ function FooterSection({ content }: { content: FooterContent }) {
 
         {/* Bottom Section: Copyright + Nav Links */}
         <div className="footer-bottom-v2">
-          <span>{content.copyright}</span>
+          <div className="flex flex-col gap-1">
+            <span>{content.copyright}</span>
+            {companyName ? (
+              <span className="text-sm text-white/65">{companyName}</span>
+            ) : null}
+          </div>
           <div className="footer-bottom-links">
             <a href="#">Home</a>
             <a href="#">About</a>
