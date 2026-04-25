@@ -6,10 +6,13 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# Remove .env.local so the production env file takes effect during build
+RUN rm -f .env.local
 RUN npm run build
 
 FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
