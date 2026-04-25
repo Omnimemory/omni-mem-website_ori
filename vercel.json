@@ -15,7 +15,12 @@
     },
     {
       "src": "/auth/(.*)",
-      "dest": "https://mxulkceagajs.sealoshzh.site/auth/$1"
+      "dest": "https://mxulkceagajs.sealoshzh.site/auth/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-supabase-api-version, x-use-cookies"
+      }
     },
 
     {
@@ -24,14 +29,19 @@
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-supabase-api-version, x-use-cookies",
+        "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-principal-user-id, x-request-id, x-llm-api-key, x-client-info, x-supabase-api-version",
         "Access-Control-Max-Age": "86400"
       },
       "status": 204
     },
     {
       "src": "/api/(.*)",
-      "dest": "https://mxulkceagajs.sealoshzh.site/api/$1"
+      "dest": "https://mxulkceagajs.sealoshzh.site/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-principal-user-id, x-request-id, x-llm-api-key, x-client-info, x-supabase-api-version"
+      }
     },
 
     {
