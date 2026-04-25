@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/auth/:path*",
+      "destination": "https://mxulkceagajs.sealoshzh.site/auth/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://mxulkceagajs.sealoshzh.site/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
