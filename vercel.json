@@ -15,7 +15,7 @@
     },
     {
       "src": "/auth/(.*)",
-      "dest": "https://mxulkceagajs.sealoshzh.site/auth/$1",
+      "dest": "https://uogpxnojkjcx.sealoshzh.site/auth/$1",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
@@ -36,7 +36,7 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "https://mxulkceagajs.sealoshzh.site/api/$1",
+      "dest": "https://uogpxnojkjcx.sealoshzh.site/api/$1",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",

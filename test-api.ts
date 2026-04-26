@@ -1,8 +1,8 @@
 // API integration test script
-// Tests all endpoints against https://mxulkceagajs.sealoshzh.site
+// Tests all endpoints against https://uogpxnojkjcx.sealoshzh.site
 
-const BASE_URL = "https://mxulkceagajs.sealoshzh.site/api/v1"
-const SUPABASE_URL = "https://mxulkceagajs.sealoshzh.site"
+const BASE_URL = "https://uogpxnojkjcx.sealoshzh.site/api/v1"
+const SUPABASE_URL = "https://uogpxnojkjcx.sealoshzh.site"
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjY2MzIyNjEsImlzcyI6InN1cGFiYXNlIiwiZXhwIjoyMDgxOTkyMjYxLCJyb2xlIjoiYW5vbiJ9.SkcPVh-lik2QJ0z76SZP1-jo7PfXQRHFzLEdInrS1Z0"
 
