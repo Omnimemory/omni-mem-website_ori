@@ -114,7 +114,7 @@ After that, give the generated \`apiKey\` to OpenClaw so it can configure the pl
 If smoke testing shows “omnimemory-overlay apiKey is required for SaaS auth”, use these commands to repair the config:
 
 \`\`\`bash
-openclaw config set plugins.entries.omnimemory-overlay.config.baseUrl "https://uogpxnojkjcx.sealoshzh.site/api/v1/memory"
+openclaw config set plugins.entries.omnimemory-overlay.config.baseUrl "https://nrswzocoshah.sealoshzh.site/api/v1/memory"
 openclaw config set plugins.entries.omnimemory-overlay.config.apiKey "qbk_xxx (platform API key)"
 openclaw config set plugins.entries.omnimemory-overlay.config.groupPrefix "openclaw"
 openclaw config set plugins.entries.omnimemory-overlay.config.autoRecall true
@@ -144,7 +144,7 @@ openclaw config set plugins.entries.omnimemory-overlay.config.autoCapture true
 👉 基于不同底层模型的指令遵循能力差异，如果冒烟测试时会出现“omnimemory-overlay apiKey is required for SaaS auth”这样的报错，请使用以下命令修复：
 
 \`\`\`bash
-openclaw config set plugins.entries.omnimemory-overlay.config.baseUrl "https://uogpxnojkjcx.sealoshzh.site/api/v1/memory"
+openclaw config set plugins.entries.omnimemory-overlay.config.baseUrl "https://nrswzocoshah.sealoshzh.site/api/v1/memory"
 openclaw config set plugins.entries.omnimemory-overlay.config.apiKey "qbk_xxx（平台 API Key）"
 openclaw config set plugins.entries.omnimemory-overlay.config.groupPrefix "openclaw"
 openclaw config set plugins.entries.omnimemory-overlay.config.autoRecall true
