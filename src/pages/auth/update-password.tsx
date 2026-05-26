@@ -1,6 +1,7 @@
-﻿import { Button, Card, CardBody, CardHeader, Input } from '@nextui-org/react'
-import { useMemo, useState } from 'react'
-import { getApiEnv } from '../../lib/env'
+import { Button, Card, CardBody, CardHeader, Input } from '@nextui-org/react'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
+import { useEffect, useState } from 'react'
+import { useSupabaseSession } from '../../hooks/use-supabase-session'
 import { validatePasswordComplexity } from '../../lib/password'
 
 interface UpdatePasswordPageProps {
@@ -9,30 +10,27 @@ interface UpdatePasswordPageProps {
   onNavigate: (path: string) => void
 }
 
-export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: UpdatePasswordPageProps) {
-  const apiBaseUrl = useMemo(() => getApiEnv().apiBaseUrl, [])
-  const resetToken = useMemo(() => {
-    if (typeof window === 'undefined') return null
-    const params = new URLSearchParams(window.location.search)
-    const tokenFromQuery = params.get('token') ?? params.get('access_token')
-    if (tokenFromQuery) return tokenFromQuery
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-    return hashParams.get('access_token') ?? null
-  }, [])
+export function UpdatePasswordPage({ signInPath, onNavigate }: UpdatePasswordPageProps) {
+  const { client } = useSupabaseSession()
+  const [ready, setReady] = useState(false)
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [isBusy, setIsBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  // Supabase sends a PASSWORD_RECOVERY event when the user lands via the reset link.
+  // We wait for that event before allowing the form to submit.
+  useEffect(() => {
+    if (!client) return
+    const { data: { subscription } } = client.auth.onAuthStateChange((event: AuthChangeEvent) => {
+      if (event === 'PASSWORD_RECOVERY') setReady(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [client])
 
   async function handleUpdatePassword() {
     setErrorMessage(null)
-    setSuccessMessage(null)
-
-    if (!resetToken) {
-      setErrorMessage('链接已失效，请重新发起密码重置。')
-      return
-    }
 
     if (!password || !repeatPassword) {
       setErrorMessage('请输入新密码。')
@@ -50,28 +48,39 @@ export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: Up
       return
     }
 
-    setIsBusy(true)
-    try {
-      const response = await fetch(`${apiBaseUrl}/auth/password-reset/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reset_token: resetToken, password }),
-      })
-      const data = (await response.json().catch(() => ({}))) as { message?: string }
-      if (!response.ok) {
-        throw new Error(data?.message ?? '密码更新失败')
-      }
-
-      setSuccessMessage('密码已更新。')
-      onNavigate(signInPath)
-    } catch (error) {
-      setErrorMessage(String(error))
-    } finally {
-      setIsBusy(false)
+    if (!client) {
+      setErrorMessage('客户端未就绪，请刷新页面重试。')
+      return
     }
+
+    setIsBusy(true)
+    const { error } = await client.auth.updateUser({ password })
+    setIsBusy(false)
+
+    if (error) {
+      setErrorMessage(error.message)
+      return
+    }
+
+    setDone(true)
+    setTimeout(() => onNavigate(signInPath), 2000)
   }
 
-  if (!resetToken) {
+  if (done) {
+    return (
+      <Card className="glass-panel mx-auto w-full max-w-md">
+        <CardHeader className="flex flex-col items-start gap-2">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Reset</p>
+          <h1 className="text-2xl font-semibold">密码已更新</h1>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <p className="text-sm text-muted">密码更新成功，正在跳转到登录页…</p>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  if (!ready) {
     return (
       <Card className="glass-panel mx-auto w-full max-w-md">
         <CardHeader className="flex flex-col items-start gap-2">
@@ -79,7 +88,7 @@ export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: Up
           <h1 className="text-2xl font-semibold">更新密码</h1>
         </CardHeader>
         <CardBody className="space-y-4">
-          <p className="text-sm text-muted">链接已失效或未登录，请重新发起密码重置。</p>
+          <p className="text-sm text-muted">链接已失效或未通过验证，请重新发起密码重置。</p>
           <Button className="bg-teal text-white hover:bg-seafoam" radius="full" onPress={() => onNavigate(signInPath)}>
             返回登录
           </Button>
@@ -96,22 +105,26 @@ export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: Up
       </CardHeader>
       <CardBody className="space-y-4">
         <Input
-          label="New Password"
-          placeholder="Enter a new password"
+          label="新密码"
+          placeholder="至少 9 位字符"
           type="password"
           value={password}
           onValueChange={setPassword}
         />
         <Input
-          label="Repeat Password"
-          placeholder="Repeat your password"
+          label="确认新密码"
+          placeholder="再次输入新密码"
           type="password"
           value={repeatPassword}
           onValueChange={setRepeatPassword}
         />
         {errorMessage ? <p className="text-sm text-danger-500">{errorMessage}</p> : null}
-        {successMessage ? <p className="text-sm text-emerald-500">{successMessage}</p> : null}
-        <Button className="bg-teal text-white hover:bg-seafoam" radius="full" isLoading={isBusy} onPress={handleUpdatePassword}>
+        <Button
+          className="bg-teal text-white hover:bg-seafoam"
+          radius="full"
+          isLoading={isBusy}
+          onPress={handleUpdatePassword}
+        >
           更新密码
         </Button>
       </CardBody>
