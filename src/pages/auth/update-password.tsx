@@ -19,10 +19,18 @@ export function UpdatePasswordPage({ signInPath, onNavigate }: UpdatePasswordPag
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
-  // Supabase sends a PASSWORD_RECOVERY event when the user lands via the reset link.
-  // We wait for that event before allowing the form to submit.
   useEffect(() => {
     if (!client) return
+
+    // The PASSWORD_RECOVERY event may fire before this component mounts (Supabase
+    // processes the URL hash immediately on page load). Check the hash directly as
+    // a fallback so we don't miss it.
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    if (hash.get('type') === 'recovery') {
+      setReady(true)
+      return
+    }
+
     const { data: { subscription } } = client.auth.onAuthStateChange((event: AuthChangeEvent) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
