@@ -70,11 +70,12 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
       })
       const data = (await response.json().catch(() => ({}))) as {
         message?: string
-        reset_token?: string
+        access_token?: string
       }
-      if (!response.ok) throw new Error(data?.message ?? '验证码校验失败')
-      if (!data.reset_token) throw new Error('验证码校验失败')
-      setResetToken(data.reset_token)
+      console.log(data)
+      // if (!response.ok) throw new Error(data?.message ?? '验证码校验失败')
+      if (!data.access_token) throw new Error('验证码校验失败')
+      setResetToken(data.access_token)
       setStep('set-password')
       setSuccessMessage('验证成功，请设置新密码。')
     } catch (error) {
@@ -104,7 +105,7 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
       const response = await fetch(`${apiBaseUrl}/auth/password-reset/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reset_token: resetToken, password }),
+        body: JSON.stringify({ access_token: resetToken, password }),
       })
       const data = (await response.json().catch(() => ({}))) as { message?: string }
       if (!response.ok) throw new Error(data?.message ?? '密码更新失败')
