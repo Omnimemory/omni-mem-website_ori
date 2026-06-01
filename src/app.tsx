@@ -4,6 +4,7 @@ import { BarChart3, Home, KeyRound, Settings, UploadCloud, UserCircle, Play, Che
 import { Analytics } from '@vercel/analytics/react'
 import { DashboardShell, type DashboardLink } from './components/dashboard-shell'
 import { useSupabaseSession } from './hooks/use-supabase-session'
+import { installUnauthorizedGuard } from './lib/session-guard'
 import { MemoryPlayerV3 } from './components/memory-demo-v3'
 import { DashboardPage } from './pages/dashboard'
 import { ApiKeysPage } from './pages/api-keys'
@@ -53,6 +54,12 @@ export function App() {
   const isPublicMarketingRoute = isMarketing || isOpenClawMemoryPlugin
   const isDocs = routeKey === 'docs'
   const isProtectedRoute = ['dashboard', 'apiKeys', 'uploads', 'usage', 'memoryPolicy', 'profile'].includes(routeKey)
+
+  // Sign out automatically when the backend rejects an expired token with 401,
+  // so the user is redirected to sign-in instead of looping on the dashboard.
+  useEffect(() => {
+    installUnauthorizedGuard()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)

@@ -1,4 +1,5 @@
 import { getApiEnv } from './env'
+import { handleUnauthorized } from './session-guard'
 
 interface ApiRequestParams {
   path: string
@@ -28,6 +29,9 @@ export async function apiRequest<T>({
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      void handleUnauthorized()
+    }
     const message = await response.text()
     throw new Error(message || `Request failed with status ${response.status}`)
   }
