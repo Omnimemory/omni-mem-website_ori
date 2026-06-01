@@ -79,14 +79,27 @@ export function DashboardShell({
   }, [links, labels.featureNav, labels.account])
 
   async function handleSignOut() {
-    if (!client || isSigningOut) return
+    if (isSigningOut) return
     setIsSigningOut(true)
     setSignOutError(null)
-    const result = await signOut({ client })
-    if (!result.ok) {
-      setSignOutError(result.error ?? labels.signOutFailed)
+
+    // 1. Wipe all client-side storage first so no session can be re-hydrated.
+    try { window.localStorage.clear() } catch {}
+    try { window.sessionStorage.clear() } catch {}
+
+    // 2. Fire the revoke request (best effort, bounded so a slow/failed
+    //    response can't block the redirect). We ignore whatever it returns.
+    if (client) {
+      await Promise.race([
+        signOut({ client }).catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ])
     }
-    setIsSigningOut(false)
+
+    // 3. Always return to the login page with a full navigation, which also
+    //    discards any in-memory session state.
+    const signInUrl = locale === 'en' ? '/auth/sign-in' : `/${locale}/auth/sign-in`
+    window.location.replace(signInUrl)
   }
 
   const accountName = session?.user?.user_metadata?.name
