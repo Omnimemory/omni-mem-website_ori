@@ -118,8 +118,6 @@ export const contentEN = {
     title: 'Teams building with Omni Memory',
     items: [
       { name: 'Sarah Chen', title: 'Head of AI, Aurora Labs', quote: 'We replaced three internal services with Omni Memory. Agent latency dropped 40% immediately—it just works.' },
-      { name: 'Marcus Williams', title: 'VP Product, Northwind', quote: 'Our clinical assistants finally remember patient context across sessions. Game changer for healthcare AI.' },
-      { name: 'Elena Rodriguez', title: 'Founder, Signalwave', quote: 'The policy controls let us scope memory by project without building custom infrastructure. Shipped in a week.' },
     ],
   },
   partners: {
@@ -245,8 +243,6 @@ export const contentZH = {
     title: '团队使用 Omni Memory',
     items: [
       { name: 'Sarah Chen', title: 'Aurora Labs AI 负责人', quote: '我们用 Omni Memory 替代了多个内部服务，延迟显著下降。' },
-      { name: 'Marcus Williams', title: 'Northwind 产品副总裁', quote: '临床助手终于能跨会话记住上下文，落地速度极快。' },
-      { name: 'Elena Rodriguez', title: 'Signalwave 创始人', quote: '策略控制让我们无需重建基础设施即可上线。' },
     ],
   },
   partners: {

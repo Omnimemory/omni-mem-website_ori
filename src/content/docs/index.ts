@@ -68,23 +68,23 @@ export const docsNavigation: DocsNav = {
         {
           title: { en: 'Account Setup', zh: '账户设置' },
           href: '/docs/guides/setup',
-          description: { en: 'Create API key & configure LLM (BYOK)', zh: '创建 API 密钥并配置 LLM（BYOK）' },
+          description: { en: 'Create your account and API key', zh: '创建账户和 API 密钥' },
         },
-        {
-          title: { en: 'Python SDK', zh: 'Python SDK' },
-          href: '/docs/sdk/python',
-          description: { en: 'Get memory working in 5 minutes', zh: '5 分钟内让记忆工作起来' },
-        },
-        {
-          title: { en: 'Core Concepts', zh: '核心概念' },
-          href: '/docs/concepts',
-          description: { en: 'Understand save, search, and retrieval', zh: '理解保存、搜索和检索' },
-        },
-        {
-          title: { en: 'Pipelines', zh: '处理管线' },
-          href: '/docs/pipelines',
-          description: { en: 'Text vs Video', zh: '文本 vs 视频' },
-        },
+        // {
+        //   title: { en: 'Python SDK', zh: 'Python SDK' },
+        //   href: '/docs/sdk/python',
+        //   description: { en: 'Get memory working in 5 minutes', zh: '5 分钟内让记忆工作起来' },
+        // },
+        // {
+        //   title: { en: 'Core Concepts', zh: '核心概念' },
+        //   href: '/docs/concepts',
+        //   description: { en: 'Understand save, search, and retrieval', zh: '理解保存、搜索和检索' },
+        // },
+        // {
+        //   title: { en: 'Pipelines', zh: '处理管线' },
+        //   href: '/docs/pipelines',
+        //   description: { en: 'Text vs Video', zh: '文本 vs 视频' },
+        // },
       ],
     },
     {
@@ -102,45 +102,45 @@ export const docsNavigation: DocsNav = {
         },
       ],
     },
-    {
-      title: { en: 'Guides', zh: '指南' },
-      items: [
-        {
-          title: { en: 'Agent Integration', zh: 'Agent 集成' },
-          href: '/docs/guides/agent',
-          description: { en: 'Add memory to your LLM agent', zh: '给你的 LLM Agent 添加记忆' },
-        },
-        {
-          title: { en: 'OpenClaw Memory Plugin 🔥', zh: 'OpenClaw记忆插件 🔥' },
-          href: '/docs/guides/openclaw-memory-plugin',
-          description: { en: 'Full OpenClaw plugin setup and smoke test guide', zh: 'OpenClaw 插件完整安装、配置与冒烟测试指南' },
-        },
-        {
-          title: { en: 'Multi-Speaker', zh: '多说话人' },
-          href: '/docs/guides/multi-speaker',
-          description: { en: 'Handle conversations with multiple people', zh: '处理多人对话' },
-        },
-      ],
-    },
-    {
-      title: { en: 'Reference', zh: '参考' },
-      items: [
-        {
-          title: { en: 'Error Codes', zh: '错误码' },
-          href: '/docs/reference/errors',
-          description: { en: 'Handle failures gracefully', zh: '优雅处理失败' },
-        },
-        {
-          title: { en: 'Limits', zh: '限制' },
-          href: '/docs/reference/limits',
-          description: { en: 'Rate limits and quotas', zh: '速率限制和配额' },
-        },
-        {
-          title: { en: 'Changelog', zh: '更新日志' },
-          href: '/docs/reference/changelog',
-        },
-      ],
-    },
+    // {
+    //   title: { en: 'Guides', zh: '指南' },
+    //   items: [
+    //     {
+    //       title: { en: 'Agent Integration', zh: 'Agent 集成' },
+    //       href: '/docs/guides/agent',
+    //       description: { en: 'Add memory to your LLM agent', zh: '给你的 LLM Agent 添加记忆' },
+    //     },
+    //     {
+    //       title: { en: 'OpenClaw Memory Plugin 🔥', zh: 'OpenClaw记忆插件 🔥' },
+    //       href: '/docs/guides/openclaw-memory-plugin',
+    //       description: { en: 'Full OpenClaw plugin setup and smoke test guide', zh: 'OpenClaw 插件完整安装、配置与冒烟测试指南' },
+    //     },
+    //     {
+    //       title: { en: 'Multi-Speaker', zh: '多说话人' },
+    //       href: '/docs/guides/multi-speaker',
+    //       description: { en: 'Handle conversations with multiple people', zh: '处理多人对话' },
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: { en: 'Reference', zh: '参考' },
+    //   items: [
+    //     {
+    //       title: { en: 'Error Codes', zh: '错误码' },
+    //       href: '/docs/reference/errors',
+    //       description: { en: 'Handle failures gracefully', zh: '优雅处理失败' },
+    //     },
+    //     {
+    //       title: { en: 'Limits', zh: '限制' },
+    //       href: '/docs/reference/limits',
+    //       description: { en: 'Rate limits and quotas', zh: '速率限制和配额' },
+    //     },
+    //     {
+    //       title: { en: 'Changelog', zh: '更新日志' },
+    //       href: '/docs/reference/changelog',
+    //     },
+    //   ],
+    // },
   ],
 }
 

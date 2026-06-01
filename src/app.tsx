@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, type FormEvent } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
-import { BarChart3, Home, KeyRound, Settings, UploadCloud, UserCircle, Play, Check, X, Linkedin, Github } from 'lucide-react'
+import { BarChart3, Home, KeyRound, Settings, UploadCloud, UserCircle, Play, Check, X, Linkedin, Github, Rocket, Cpu, Trophy, FileText, Copy, Send, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Analytics } from '@vercel/analytics/react'
 import { DashboardShell, type DashboardLink } from './components/dashboard-shell'
 import { useSupabaseSession } from './hooks/use-supabase-session'
-import { MemoryPlayerV3 } from './components/memory-demo-v3'
 import { DashboardPage } from './pages/dashboard'
 import { ApiKeysPage } from './pages/api-keys'
 import { UploadsPage } from './pages/uploads'
@@ -25,7 +24,9 @@ export function App() {
     getRouteFromPathname({ pathname: getBrowserPathname() })
   )
   const [isScrolled, setIsScrolled] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const [isWechatOpen, setIsWechatOpen] = useState(false)
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const content = contentByLocale[locale]
   const homepageCompanyName =
     locale === 'zh'
@@ -48,16 +49,29 @@ export function App() {
   const memoryPolicyPath = buildLocalePathname({ pathname: ROUTE_PATHS.memoryPolicy, locale })
   const profilePath = buildLocalePathname({ pathname: ROUTE_PATHS.profile, locale })
   const homePath = '/'
+  const memAuraPath = buildLocalePathname({ pathname: ROUTE_PATHS.memAura, locale })
+  const docsPath = buildLocalePathname({ pathname: ROUTE_PATHS.docs, locale })
   const isMarketing = routeKey === 'marketing'
   const isOpenClawMemoryPlugin = routeKey === 'openclawPlugin'
-  const isPublicMarketingRoute = isMarketing || isOpenClawMemoryPlugin
+  const isMemAura = routeKey === 'memAura'
+  const isPublicMarketingRoute = isMarketing || isOpenClawMemoryPlugin || isMemAura
   const isDocs = routeKey === 'docs'
   const isProtectedRoute = ['dashboard', 'apiKeys', 'uploads', 'usage', 'memoryPolicy', 'profile'].includes(routeKey)
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    const handleScroll = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      setIsScrolled(window.scrollY > 50)
+      setScrollProgress(maxScroll > 0 ? Math.min(window.scrollY / maxScroll, 1) : 0)
+    }
+
+    handleScroll()
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('resize', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
   }, [])
 
   // IP-based locale detection on first visit
@@ -131,6 +145,8 @@ export function App() {
 
   function handleSignInClick() { navigateTo(signInPath) }
   function handleSignUpClick() { navigateTo(signUpPath) }
+  function handleOpenContactModal() { setIsContactModalOpen(true) }
+  function handleCloseContactModal() { setIsContactModalOpen(false) }
 
   function navigateTo(pathname: string) {
     if (typeof window === 'undefined') return
@@ -170,7 +186,7 @@ export function App() {
 
   const mainClassName = isProtectedRoute
     ? 'min-h-[70vh]'
-    : isDocs || isOpenClawMemoryPlugin
+    : isDocs || isOpenClawMemoryPlugin || isMemAura
       ? 'min-h-[70vh] pt-0'
       : 'min-h-[70vh] px-6 pb-24 pt-28 sm:px-8'
 
@@ -243,23 +259,40 @@ export function App() {
         <main>
           {isMarketing ? (
             <>
-              <HeroSection content={content.hero} />
+              <HeroSection
+                content={content.hero}
+                dashboardPath={dashboardPath}
+                docsPath={docsPath}
+                memAuraPath={memAuraPath}
+                locale={locale}
+              />
               <NewsSection locale={locale} />
               <DemoSection />
               <HowItWorksSection content={content.howItWorks} />
               <BenchmarkSection content={content.stats} />
-              <DevelopersSection content={content.developers} />
-              <EnterpriseSection content={content.features} />
+              {/* <EnterpriseSection content={content.features} /> */}
               <TestimonialsSection content={content.testimonials} />
               <PartnersMarquee content={content.partners} />
-              <PricingSection content={content.pricing} />
-              <CtaSection content={content.cta} />
+              <PricingSection content={content.pricing} eyebrowTone="cyan" onContactClick={handleOpenContactModal} />
+              <CtaSection content={content.cta} onContactClick={handleOpenContactModal} />
               <FooterSection content={content.footer} companyName={homepageCompanyName} />
             </>
-          ) : (
+          ) : isOpenClawMemoryPlugin ? (
             <>
               <OpenClawMemoryPluginPage locale={locale} onNavigate={navigateTo} />
               <FooterSection content={content.footer} />
+            </>
+          ) : (
+            <>
+              <MemAuraPage
+                content={content}
+                dashboardPath={dashboardPath}
+                docsPath={docsPath}
+                memAuraPath={memAuraPath}
+                locale={locale}
+                onContactClick={handleOpenContactModal}
+              />
+              <MemAuraFooterSection phone={content.businessContact.phone} locale={locale} />
             </>
           )}
         </main>
@@ -320,6 +353,12 @@ export function App() {
           )}
         </main>
       )}
+      {isPublicMarketingRoute && <PageScrollIndicator progress={scrollProgress} />}
+      <ContactModal
+        content={content.businessContact}
+        isOpen={isContactModalOpen}
+        onClose={handleCloseContactModal}
+      />
       <Analytics />
       <div className={`wechat-fab ${isWechatOpen ? 'open' : ''}`}>
         <button
@@ -358,30 +397,234 @@ export function App() {
   )
 }
 
+function PageScrollIndicator({ progress }: { progress: number }) {
+  return (
+    <div className="page-scroll-indicator" aria-hidden>
+      <div className="page-scroll-indicator-thumb" style={{ height: `${Math.max(progress * 100, 8)}%` }} />
+    </div>
+  )
+}
 // ============ HERO SECTION ============
-function HeroSection({ content }: { content: HeroContent }) {
+function HeroSection({
+  content,
+  dashboardPath,
+  docsPath,
+  memAuraPath,
+  locale,
+}: {
+  content: HeroContent
+  dashboardPath: string
+  docsPath: string
+  memAuraPath: string
+  locale: 'en' | 'zh'
+}) {
   return (
     <section className="hero-v2">
-      <div className="hero-v2-bg">
-        <img src="/Hero image.jpg" alt="" className="hero-bg-image" />
-        <div className="hero-bg-overlay" />
-        <div className="hero-particles" />
+      <div className="hero-v2-bg" aria-hidden>
+        <div className="hero-v2-bg-gradient" />
+        <div className="hero-v2-glow hero-v2-glow--1" />
+        <div className="hero-v2-glow hero-v2-glow--2" />
+        <div className="hero-v2-grid" />
       </div>
       <div className="hero-v2-content">
+        <div className="hero-announcement">
+          <span className="hero-announcement-dot" aria-hidden />
+          <span>{content.announcement}</span>
+          <span className="hero-announcement-dot hero-announcement-dot--plain" aria-hidden />
+        </div>
+
         <h1 className="hero-v2-title">
-          <span className="hero-v2-line">{content.titleLine1}</span>
-          <span className="hero-v2-line hero-accent">{content.titleLine2}</span>
+          <span className="hero-v2-line hero-v2-title-plain">{content.titleLine1}</span>
+          <span className="hero-v2-line hero-v2-title-gradient">{content.titleLine2}</span>
         </h1>
-        <p className="hero-v2-subtitle">{content.description}</p>
+
+        <div className="hero-description-box">
+          <p className="hero-description-text">
+            <span
+              className={
+                locale === 'zh'
+                  ? 'hero-description-main hero-description-main--nowrap'
+                  : 'hero-description-main'
+              }
+            >
+              <span className="hero-description-lead">
+                <strong>{content.descriptionLead}</strong>
+              </span>
+              {content.descriptionBody}
+            </span>
+            <span className="hero-benefits-row">
+              <span className="hero-benefits-label">{content.benefitsEyebrow}</span>
+              {content.benefitTags.map((tag, i) => (
+                <span key={tag} className={`hero-benefit-tag hero-benefit-tag--${i + 1}`}>
+                  {tag}
+                </span>
+              ))}
+            </span>
+          </p>
+        </div>
+
         <div className="hero-v2-ctas">
-          <a href="/dashboard" className="btn-primary">{content.primaryCta}</a>
-          <a href="/docs" className="btn-secondary">{content.secondaryCta}</a>
+          <a href={dashboardPath} className="hero-cta-primary">
+            <Rocket size={20} aria-hidden />
+            {content.primaryCta}
+          </a>
+          <a href={docsPath} className="hero-cta-secondary">
+            <FileText size={20} aria-hidden />
+            {content.secondaryCta}
+          </a>
+          <a href={memAuraPath} className="hero-cta-secondary hero-cta-solution">
+            <Cpu size={20} aria-hidden />
+            {content.solutionCta}
+          </a>
+        </div>
+
+        <div className="hero-mem-stats">
+          {content.heroStats.map((row) => {
+            if (row.kind === 'percent') {
+              return (
+                <div key={row.label} className="hero-mem-stat">
+                  <div className="hero-mem-stat-value">
+                    {row.num}
+                    <span className="hero-mem-stat-suffix">%</span>
+                  </div>
+                  <div className="hero-mem-stat-label">{row.label}</div>
+                </div>
+              )
+            }
+            if (row.kind === 'latency') {
+              return (
+                <div key={row.label} className="hero-mem-stat">
+                  <div className="hero-mem-stat-value hero-mem-stat-value--latency">
+                    <span className="hero-mem-stat-prefix">≤</span>
+                    {row.maxMs}
+                    <span className="hero-mem-stat-suffix ms">ms</span>
+                  </div>
+                  <div className="hero-mem-stat-label">{row.label}</div>
+                </div>
+              )
+            }
+            return (
+              <div key={row.label} className="hero-mem-stat">
+                <Trophy size={32} className="hero-mem-stat-trophy" aria-hidden />
+                <div className="hero-mem-stat-label">{row.label}</div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>
   )
 }
 
+// ============ MEMAURA PAGE ============
+function MemAuraPage({
+  content,
+  dashboardPath,
+  docsPath,
+  memAuraPath,
+  locale,
+  onContactClick,
+}: {
+  content: AppContent
+  dashboardPath: string
+  docsPath: string
+  memAuraPath: string
+  locale: Locale
+  onContactClick: () => void
+}) {
+  const pageContent = locale === 'zh'
+    ? {
+      architectureEyebrow: '架构图 / ARCHITECTURE',
+      architectureTitle: '从多模态事件到长期认知资产',
+      architectureDescription: '通过摄取、增强、检索的记忆链路，将文本、视觉、听觉和行为事件沉淀为可追溯、可更新、可注入的长期记忆。',
+      advantages: [
+        '保留 80% 以上原始证据，减少过度摘要导致的 AI 幻觉。',
+        '识别长期偏好、短期情绪、时间顺序和过期规则。',
+        '支持跨会话、跨应用、跨设备的人格一致性与记忆同步。',
+      ],
+    }
+    : {
+      architectureEyebrow: '架构图 / ARCHITECTURE',
+      architectureTitle: 'From multimodal events to long-term cognitive assets',
+      architectureDescription: 'The ingest, enrich, and recall pipeline turns text, visual, auditory, and behavioral events into traceable, updatable, injectable long-term memory.',
+      advantages: [
+        'Retain more than 80% raw evidence to reduce hallucinations caused by over-summary.',
+        'Understand long-term preferences, short-term emotion, temporal order, and expiry rules.',
+        'Keep personality and memory consistent across sessions, applications, and devices.',
+      ],
+    }
+
+  return (
+    <div className="mem-aura-page">
+      <HeroSection
+        content={content.hero}
+        dashboardPath={dashboardPath}
+        docsPath={docsPath}
+        memAuraPath={memAuraPath}
+        locale={locale}
+      />
+
+      <CapabilitiesSection content={content.capabilities} />
+      <MemAuraArchitectureSection
+        eyebrow={pageContent.architectureEyebrow}
+        title={pageContent.architectureTitle}
+        description={pageContent.architectureDescription}
+        steps={content.howItWorks.steps}
+        advantages={pageContent.advantages}
+      />
+      <CostReductionSection content={content.costReduction} />
+      <CustomerCaseSection content={content.customerCase} />
+      <PricingSection content={content.pricing} onContactClick={onContactClick} />
+      <BusinessContactSection content={content.businessContact} onContactClick={onContactClick} />
+    </div>
+  )
+}
+
+function MemAuraArchitectureSection({
+  eyebrow,
+  title,
+  description,
+  steps,
+  advantages,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  steps: { title: string; description: string }[]
+  advantages: string[]
+}) {
+  return (
+    <section className="module-section mem-aura-architecture" id="mem-aura-architecture">
+      <div className="container-v2">
+        <SectionEyebrow icon="architecture">{eyebrow}</SectionEyebrow>
+        <h2 className="module-title">{title}</h2>
+        <p className="module-subtitle">{description}</p>
+
+        <div className="mem-aura-architecture-grid">
+          <div className="mem-aura-flow-card">
+            {steps.map((step, index) => (
+              <div key={step.title} className="mem-aura-flow-step">
+                <span>{index + 1}</span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mem-aura-advantages-card">
+            {advantages.map((advantage) => (
+              <div key={advantage} className="mem-aura-advantage-item">
+                <Check size={18} aria-hidden />
+                <p>{advantage}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 function NewsSection({ locale }: { locale: Locale }) {
   const content = locale === 'en' ? {
     eyebrow: 'Recent News',
@@ -398,7 +641,7 @@ function NewsSection({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section className="bg-white px-6 py-10 sm:px-8">
+    <section id="recent-news" className="bg-white px-6 py-10 sm:px-8">
       <div
         className="container-v2 overflow-hidden rounded-[34px] border p-4 shadow-[0_26px_80px_rgba(12,24,61,0.08)] lg:p-5"
         style={{ borderColor: 'rgba(var(--ink), 0.08)', background: 'linear-gradient(135deg, rgba(12, 24, 61, 0.04) 0%, rgba(61, 166, 166, 0.08) 100%)' }}
@@ -444,41 +687,24 @@ function NewsSection({ locale }: { locale: Locale }) {
 
 // ============ DEMO SECTION (PLACEHOLDER) ============
 function DemoSection() {
-  const [activeTab, setActiveTab] = useState<'conversation' | 'video'>('conversation')
-
   return (
     <section className="demo-section">
       <div className="container-v2">
         <h2 className="demo-section-title">Introducing OmniMemory</h2>
         <div className="demo-tabs">
-          <button
-            className={`demo-tab ${activeTab === 'conversation' ? 'active' : ''}`}
-            onClick={() => setActiveTab('conversation')}
-          >
-            Conversation
-          </button>
-          <button
-            className={`demo-tab ${activeTab === 'video' ? 'active' : ''}`}
-            onClick={() => setActiveTab('video')}
-          >
+          <button className="demo-tab active" type="button">
             Video
           </button>
         </div>
         <div className="demo-content">
-          {activeTab === 'video' ? (
-            <MemoryPlayerV3 />
-          ) : (
-            <>
-              <h3 className="demo-content-title">
-                Interactive Demo
-              </h3>
-              <div className="demo-placeholder">
-                <p className="demo-placeholder-text">
-                  Experience Omni Memory in action. Interactive demo coming soon.
-                </p>
-              </div>
-            </>
-          )}
+          <video
+            className="demo-video-player"
+            src="/Video/omnimemory-demo.mp4"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label="OmniMemory video demo"
+          />
         </div>
       </div>
     </section>
@@ -556,7 +782,7 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
                   <span className="benchmark-stat-label">Task Categories</span>
                 </div>
                 <div className="benchmark-stat">
-                  <span className="benchmark-stat-value">&lt;700ms</span>
+                  <span className="benchmark-stat-value">&lt;500ms</span>
                   <span className="benchmark-stat-label">Retrieval Latency</span>
                 </div>
               </div>
@@ -668,6 +894,7 @@ function BenchmarkSection({ content }: { content: StatsContent }) {
 }
 
 // ============ ENTERPRISE SECTION ============
+
 function EnterpriseSection({ content }: { content: FeaturesContent }) {
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -739,56 +966,528 @@ function EnterpriseSection({ content }: { content: FeaturesContent }) {
   )
 }
 
-// ============ HOW IT WORKS SECTION ============
-// Node graph data structure for the knowledge graph
-interface GraphNode {
-  id: string;
-  icon: 'person' | 'location' | 'object' | 'analyse' | 'research' | 'study';
-  layer: 'cognition' | 'perception';
-  active?: boolean;
+type SectionEyebrowIcon = 'features' | 'architecture' | 'metrics' | 'pricing' | 'customer' | 'contact'
+
+function SectionEyebrow({
+  children,
+  align = 'center',
+  icon,
+  tone = 'default',
+}: {
+  children: string
+  align?: 'center' | 'left'
+  icon: SectionEyebrowIcon
+  tone?: 'default' | 'cyan'
+}) {
+  return (
+    <p
+      className={[
+        'mem-aura-section-eyebrow',
+        `mem-aura-section-eyebrow--${align}`,
+        tone === 'cyan' ? 'mem-aura-section-eyebrow--cyan' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      <span className="mem-aura-section-eyebrow-icon" aria-hidden>
+        <SectionEyebrowGlyph icon={icon} />
+      </span>
+      {children}
+    </p>
+  )
 }
 
-interface GraphEdge {
-  from: string;
-  to: string;
+function SectionEyebrowGlyph({ icon }: { icon: SectionEyebrowIcon }) {
+  if (icon === 'features') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 3 13.8 8.2 19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        <path d="m18 15 .8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  if (icon === 'architecture') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="m12 4 7 3.5-7 3.5-7-3.5L12 4Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        <path d="m5 12 7 3.5 7-3.5M5 16.5 12 20l7-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  if (icon === 'metrics') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M4 19h16M7 19V10m5 9V5m5 14v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M6 10h2m3-5h2m3 7h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    )
+  }
+
+  if (icon === 'pricing') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M4 11.5 11.5 4H20v8.5L12.5 20 4 11.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        <path d="M16 8h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      </svg>
+    )
+  }
+
+  if (icon === 'contact') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M21 15.6v3a2 2 0 0 1-2.2 2 16.9 16.9 0 0 1-7.4-2.6 16.4 16.4 0 0 1-5.1-5.1 16.9 16.9 0 0 1-2.6-7.4A2 2 0 0 1 5.7 3.3h3a2 2 0 0 1 2 1.7c.1.8.3 1.5.6 2.2a2 2 0 0 1-.4 2.1l-1.2 1.2a13 13 0 0 0 4.8 4.8l1.2-1.2a2 2 0 0 1 2.1-.4c.7.3 1.4.5 2.2.6a2 2 0 0 1 1.7 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 0 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CapabilitiesSection({ content }: { content: CapabilitiesContent }) {
+  return (
+    <section className="module-section module-gray capabilities-showcase" id="capabilities">
+      <div className="container-v2 capabilities-showcase-inner">
+        <SectionEyebrow icon="features">完整功能 / CORE FEATURES</SectionEyebrow>
+        <h2 className="capabilities-showcase-title">核心功能特性</h2>
+        <p className="capabilities-showcase-subtitle">从记录对话到深度进化的核心技术支柱</p>
+
+        <div className="capabilities-showcase-groups">
+          {content.groups.map((group, groupIndex) => (
+            <div key={group.label} className="capability-showcase-group">
+              <div className="capability-showcase-heading">
+                {groupIndex === 0 ? <TargetGlyph /> : <LightningGlyph />}
+                <span>{group.label}</span>
+                <div />
+              </div>
+              <div className="capability-showcase-grid">
+                {group.items.map((item, itemIndex) => (
+                  <article key={item.title} className="capability-showcase-card">
+                    <div className="capability-showcase-icon">
+                      <CapabilityGlyph index={itemIndex + groupIndex * 5} />
+                    </div>
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TargetGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+function LightningGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M13 2 4 14h7l-1 8 10-13h-7l0-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CapabilityGlyph({ index }: { index: number }) {
+  const glyphs = [
+    <g key="eye">
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.35" stroke="currentColor" strokeWidth="1.6" />
+    </g>,
+    <path key="db" d="M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3Zm0 0v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" stroke="currentColor" strokeWidth="1.6" />,
+    <path key="user" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
+    <path key="layers" d="m12 4 8 4-8 4-8-4 8-4Zm-8 8 8 4 8-4M4 16l8 4 8-4" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />,
+    <path key="clock" d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
+    <path key="brain" d="M9 5a3 3 0 0 0-3 3v1a3 3 0 0 0 0 6v1a3 3 0 0 0 5 2.2V5.8A3 3 0 0 0 9 5Zm6 0a3 3 0 0 1 3 3v1a3 3 0 0 1 0 6v1a3 3 0 0 1-5 2.2V5.8A3 3 0 0 1 15 5Z" stroke="currentColor" strokeWidth="1.6" />,
+    <path key="gear" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 12v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M3 12h3m12 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
+    <path key="share" d="M18 8a3 3 0 1 0-2.8-4.1A3 3 0 0 0 18 8ZM6 15a3 3 0 1 0-2.8-4.1A3 3 0 0 0 6 15Zm12 6a3 3 0 1 0-2.8-4.1A3 3 0 0 0 18 21Zm-9.4-7.6 6.8 3.2M15.4 7.4 8.6 10.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
+  ]
+
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden>{glyphs[index % glyphs.length]}</svg>
+}
+
+function getCostSceneTone(scene: string) {
+  const normalizedScene = scene.toLowerCase()
+
+  if (scene.includes('重度') || normalizedScene.includes('heavy')) return 'heavy'
+  if (scene.includes('长上下文') || normalizedScene.includes('long context')) return 'long'
+  return 'medium'
+}
+
+function CostReductionSection({ content }: { content: CostReductionContent }) {
+  return (
+    <section className="module-section" id="cost-reduction">
+      <div className="container-v2">
+        <SectionEyebrow icon="metrics">{content.eyebrow}</SectionEyebrow>
+        <h2 className="module-title">{content.title}</h2>
+        <p className="module-subtitle cost-reduction-subtitle">{content.description}</p>
+
+        <div className="cost-table-wrap">
+          <table className="cost-table">
+            <thead>
+              <tr>
+                <th>模型名称</th>
+                <th>场景</th>
+                <th>优化前年输入 tokens</th>
+                <th>优化后年输入 tokens</th>
+                <th>未优化总成本 (RMB)</th>
+                <th>优化后总成本 (RMB)</th>
+                <th>成本差值 (RMB)</th>
+                <th className="cost-table-ratio-head">成本降低比例</th>
+              </tr>
+            </thead>
+            <tbody>
+              {content.rows.map((row, index) => (
+                <tr key={`${row.model}-${row.scene}`}>
+                  {index === 0 && (
+                    <td className="cost-table-model-cell" rowSpan={content.rows.length}>{row.model}</td>
+                  )}
+                  <td className={`cost-table-scene-cell cost-table-scene-cell--${getCostSceneTone(row.scene)}`}>
+                    <span>{row.scene}</span>
+                  </td>
+                  <td>{row.beforeTokens}</td>
+                  <td>{row.afterTokens}</td>
+                  <td>{row.beforeCost}</td>
+                  <td>{row.afterCost}</td>
+                  <td>{row.diff}</td>
+                  <td className="cost-table-ratio-cell">{row.ratio}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4 text-center text-xs italic text-ink/50">{content.note}</p>
+      </div>
+    </section>
+  )
+}
+
+function CustomerCaseSection({ content }: { content: CustomerCaseContent }) {
+  return (
+    <section className="module-section module-dark customer-case-section" id="customer-case">
+      <div className="container-v2 customer-case-container">
+        <div className="customer-case-header">
+          <SectionEyebrow icon="customer">{content.eyebrow}</SectionEyebrow>
+          <h2 className="customer-case-title">{content.title}</h2>
+          <p className="customer-case-subtitle">{content.summary}</p>
+        </div>
+
+        <div className="customer-case-panel">
+          <div className="customer-case-columns">
+            <article className="customer-case-column">
+              <h3 className="customer-case-heading customer-case-heading--purple">{content.backgroundTitle}</h3>
+              <p>{content.background}</p>
+              <div className="customer-case-metrics">
+                {content.metrics.map((item) => (
+                  <div key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+              <h3 className="customer-case-heading customer-case-heading--red">{content.painTitle}</h3>
+              <ul className="customer-case-list customer-case-list--pain">
+                {content.challenges.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+
+            <article className="customer-case-column customer-case-column--solution">
+              <h3 className="customer-case-heading customer-case-heading--green">{content.solutionTitle}</h3>
+              <div className="customer-case-solutions">
+                {content.solutions.map((item) => (
+                  <div key={item.title} className="customer-case-solution-item">
+                    <Check size={18} aria-hidden />
+                    <div>
+                      <h4>{item.title}</h4>
+                      <p>{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+
+          <div className="customer-case-benchmark-panel">
+            <h3>{content.benchmarkTitle}</h3>
+            <div className="customer-case-benchmark-table-v2">
+              <div className="customer-case-benchmark-head">
+                <span>指标</span>
+                <span>{content.metricBeforeLabel}</span>
+                <span>{content.metricAfterLabel}</span>
+                <span>{content.metricChangeLabel}</span>
+              </div>
+              {content.benchmark.map((item) => (
+                <div key={item.dimension} className="customer-case-benchmark-row-v2">
+                  <span>{item.dimension}</span>
+                  <span>{item.before}</span>
+                  <span>{item.after}</span>
+                  <span>{item.change}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
+function BusinessContactSection({
+  content,
+  onContactClick,
+}: {
+  content: BusinessContactContent
+  onContactClick: () => void
+}) {
+  return (
+    <section className="module-section business-contact-section" id="business-contact">
+      <div className="container-v2">
+        <div className="business-contact-card">
+          <div className="business-contact-copy">
+            <SectionEyebrow align="left" icon="contact">{content.eyebrow}</SectionEyebrow>
+            <h2 className="module-title text-left">{content.title}</h2>
+            <p className="module-subtitle text-left business-contact-description">{content.description}</p>
+          </div>
+          <div className="business-contact-actions">
+            <div>
+              <p className="business-contact-label">{content.phoneLabel}</p>
+              <button type="button" className="business-contact-phone" onClick={onContactClick}>
+                {content.wechat}
+              </button>
+            </div>
+            <button type="button" className="hero-cta-primary business-contact-cta" onClick={onContactClick}>
+              <PhoneIcon />
+              {content.cta}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ContactModal({
+  content,
+  isOpen,
+  onClose,
+}: {
+  content: BusinessContactContent
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const [contact, setContact] = useState('')
+  const [companyType, setCompanyType] = useState(content.companyTypeOptions[0] ?? '')
+  const [copied, setCopied] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen) return
+    setCompanyType(content.companyTypeOptions[0] ?? '')
+    setCopied(false)
+    setMessage(null)
+  }, [content.companyTypeOptions, isOpen])
+
+  async function handleCopy() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(content.wechat)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = content.wechat
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setMessage(content.copyFailedText)
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!contact.trim()) {
+      setMessage(content.requiredText)
+      return
+    }
+
+    setContact('')
+    setCompanyType(content.companyTypeOptions[0] ?? '')
+    setMessage(content.successText)
+  }
+
+  if (!isOpen) return null
+
+  const dialogTitleId = 'business-contact-dialog-title'
+
+  return (
+    <div className="contact-modal" role="presentation" onMouseDown={onClose}>
+      <div
+        className="contact-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={dialogTitleId}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <button type="button" className="contact-modal-close" onClick={onClose} aria-label={content.closeLabel}>
+          <X size={18} aria-hidden />
+        </button>
+
+        <div className="contact-modal-header">
+          <p className="contact-modal-eyebrow">{content.modalEyebrow}</p>
+          <h2 id={dialogTitleId}>{content.modalTitle}</h2>
+        </div>
+
+        <div className="contact-modal-copy-row">
+          <div>
+            <p className="contact-modal-wechat-line">
+              <span className="contact-modal-label">{content.wechatLabel}</span>
+              <span className="contact-modal-wechat">{content.wechat}</span>
+            </p>
+          </div>
+          <button type="button" className="contact-copy-button" onClick={handleCopy}>
+            {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
+            {copied ? content.copiedText : content.copyText}
+          </button>
+        </div>
+
+        <form className="contact-modal-form" onSubmit={handleSubmit}>
+          <label className="contact-form-field">
+            <span>{content.contactFieldLabel}</span>
+            <input
+              type="text"
+              value={contact}
+              onChange={(event) => setContact(event.target.value)}
+              placeholder={content.contactPlaceholder}
+              autoComplete="email"
+            />
+          </label>
+
+          <label className="contact-form-field">
+            <span>{content.companyTypeLabel}</span>
+            <select value={companyType} onChange={(event) => setCompanyType(event.target.value)}>
+              {content.companyTypeOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+
+          {message ? <p className="contact-modal-message">{message}</p> : null}
+
+          <button type="submit" className="contact-submit-button">
+            <Send size={16} aria-hidden />
+            {content.submitText}
+          </button>
+        </form>
+
+        <p className="contact-modal-hint">{content.formHint}</p>
+      </div>
+    </div>
+  )
+}
+
+function MemAuraFooterSection({ phone, locale }: { phone: string; locale: Locale }) {
+  const links = locale === 'zh'
+    ? [
+      { label: '完整功能', href: '#capabilities' },
+      { label: '架构优势', href: '#mem-aura-architecture' },
+      { label: '降本数据', href: '#cost-reduction' },
+      { label: '客户案例', href: '#customer-case' },
+      { label: '商务咨询', href: '#business-contact' },
+    ]
+    : [
+      { label: 'Capabilities', href: '#capabilities' },
+      { label: 'Architecture', href: '#mem-aura-architecture' },
+      { label: 'Cost data', href: '#cost-reduction' },
+      { label: 'Customer case', href: '#customer-case' },
+      { label: 'Business contact', href: '#business-contact' },
+    ]
+
+  return (
+    <footer className="mem-aura-footer">
+      <div className="container-v2 mem-aura-footer-inner">
+        <div>
+          <p className="mem-aura-footer-brand">memAura AI 记忆基座</p>
+          <p className="mem-aura-footer-copy">
+            {locale === 'zh' ? '© 2026 memAura AI 记忆基座. All rights reserved.' : '© 2026 memAura AI Memory Base. All rights reserved.'}
+          </p>
+        </div>
+        <nav className="mem-aura-footer-links" aria-label="memAura page links">
+          {links.map((link) => (
+            <a key={link.href} href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+        <a className="mem-aura-footer-phone" href={`tel:${phone}`}>
+          {phone}
+        </a>
+      </div>
+    </footer>
+  )
+}
+function PhoneIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.68A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.32 1.77.6 2.6a2 2 0 0 1-.45 2.11L8 9.8a16 16 0 0 0 6.2 6.2l1.37-1.28a2 2 0 0 1 2.11-.45c.83.28 1.7.48 2.6.6A2 2 0 0 1 22 16.92Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+interface GraphNode {
+  id: string
+  icon: 'person' | 'location' | 'object' | 'analyse' | 'research' | 'study'
+  layer: 'cognition' | 'perception'
+  active?: boolean
 }
 
 const knowledgeGraphData = {
   nodes: [
-    // Cognition layer (top row - entities)
     { id: 'c1', icon: 'person', layer: 'cognition' },
     { id: 'c2', icon: 'location', layer: 'cognition' },
     { id: 'c3', icon: 'person', layer: 'cognition' },
     { id: 'c4', icon: 'object', layer: 'cognition' },
-    // Perception layer (bottom row - evidence)
     { id: 'p1', icon: 'analyse', layer: 'perception' },
     { id: 'p2', icon: 'research', layer: 'perception', active: true },
     { id: 'p3', icon: 'study', layer: 'perception' },
     { id: 'p4', icon: 'analyse', layer: 'perception' },
     { id: 'p5', icon: 'research', layer: 'perception' },
   ] as GraphNode[],
-  edges: [
-    // Vertical connections (perception to cognition)
-    { from: 'p1', to: 'c1' },
-    { from: 'p1', to: 'c2' },
-    { from: 'p2', to: 'c1' },
-    { from: 'p2', to: 'c2' },
-    { from: 'p3', to: 'c2' },
-    { from: 'p3', to: 'c3' },
-    { from: 'p4', to: 'c3' },
-    { from: 'p4', to: 'c4' },
-    { from: 'p5', to: 'c4' },
-    // Horizontal connections within perception layer
-    { from: 'p1', to: 'p2' },
-    { from: 'p2', to: 'p3' },
-    { from: 'p3', to: 'p4' },
-    { from: 'p4', to: 'p5' },
-    // Horizontal connections within cognition layer
-    { from: 'c1', to: 'c2' },
-    { from: 'c2', to: 'c3' },
-    { from: 'c3', to: 'c4' },
-  ] as GraphEdge[]
-};
+}
 
 function HowItWorksSection({ content }: { content: HowItWorksContent }) {
   // Calculate node positions for SVG edges
@@ -1245,72 +1944,36 @@ function AgentOrbIcon() {
   )
 }
 
-// ============ DEVELOPERS SECTION ============
-function DevelopersSection({ content }: { content: DevelopersContent }) {
-  const [activeTab, setActiveTab] = useState(0)
-
-  return (
-    <section className="developers-section" id="developers">
-      <div className="developers-split">
-        <div className="developers-left">
-          <p className="module-eyebrow">{content.eyebrow}</p>
-          <h2 className="developers-title">{content.title}</h2>
-          <p className="developers-desc">{content.description}</p>
-          <div className="developers-ctas">
-            <a href="/docs" className="btn-primary">{content.primaryCta}</a>
-            <a href="mailto:alice@omnimemory.ai" className="btn-secondary">{content.secondaryCta}</a>
-          </div>
-        </div>
-        <div className="developers-right">
-          <div className="code-editor">
-            <div className="code-editor-header">
-              <span className="code-editor-dot"></span>
-              <span className="code-editor-dot"></span>
-              <span className="code-editor-dot"></span>
-              <div className="code-tabs">
-                {content.codeTabs.map((tab, i) => (
-                  <button
-                    key={tab.label}
-                    className={`code-tab ${i === activeTab ? 'active' : ''}`}
-                    onClick={() => setActiveTab(i)}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="code-editor-body">
-              <pre><code>{content.codeTabs[activeTab]?.code}</code></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // ============ PARTNERS MARQUEE ============
 function PartnersMarquee({ content }: { content: PartnersContent }) {
-  const duplicatedPartners = [...content.partners, ...content.partners]
+  const marqueePartners = Array.from({ length: 3 }, () => content.partners).flat()
   return (
     <section className="partners-marquee-section">
       <div className="partners-marquee-wrapper">
         <div className="partners-marquee">
-          {duplicatedPartners.map((partner, i) => (
-            <div key={i} className="partners-marquee-item">
-              {partner.logo ? (
-                <img
-                  src={partner.logo}
-                  alt={partner.nameCn || partner.name}
-                  className="partner-logo-img"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                  }}
-                />
-              ) : null}
-              <span className={partner.logo ? 'hidden' : ''}>{partner.nameCn || partner.name}</span>
-              <span className="dot"></span>
+          {[0, 1].map((groupIndex) => (
+            <div className="partners-marquee-group" key={groupIndex} aria-hidden={groupIndex === 1}>
+              {marqueePartners.map((partner, i) => (
+                <div key={`${groupIndex}-${partner.name}-${i}`} className="partners-marquee-item">
+                  {partner.logo ? (
+                    <img
+                      src={partner.logo}
+                      alt={groupIndex === 0 ? partner.nameCn || partner.name : ''}
+                      className={[
+                        'partner-logo-img',
+                        partner.fullColor ? 'partner-logo-img--full-color' : '',
+                        partner.logoClassName ?? '',
+                      ].filter(Boolean).join(' ')}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                  ) : null}
+                  <span className={partner.logo ? 'hidden' : ''}>{partner.nameCn || partner.name}</span>
+                  <span className="dot"></span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -1322,6 +1985,18 @@ function PartnersMarquee({ content }: { content: PartnersContent }) {
 // ============ TESTIMONIALS SECTION ============
 function TestimonialsSection({ content }: { content: TestimonialsContent }) {
   const [activeIndex, setActiveIndex] = useState(0)
+  const storyCount = content.items.length
+  const activeItem = content.items[activeIndex] ?? content.items[0]
+
+  if (!activeItem) return null
+
+  function showPreviousStory() {
+    setActiveIndex((current) => (current - 1 + storyCount) % storyCount)
+  }
+
+  function showNextStory() {
+    setActiveIndex((current) => (current + 1) % storyCount)
+  }
 
   return (
     <section className="testimonial-section-v2">
@@ -1333,20 +2008,36 @@ function TestimonialsSection({ content }: { content: TestimonialsContent }) {
         <p className="module-eyebrow" style={{ color: 'rgb(var(--teal))' }}>{content.eyebrow}</p>
         <h2 className="module-title-light">{content.title}</h2>
         <div className="testimonial-content-v2">
-          <blockquote className="testimonial-quote-v2">
-            "{content.items[activeIndex].quote}"
-          </blockquote>
+          <div className="testimonial-carousel-v2" aria-roledescription="carousel" aria-label={content.eyebrow}>
+            <button
+              type="button"
+              className="testimonial-nav-button-v2"
+              onClick={showPreviousStory}
+              aria-label="Previous customer story"
+            >
+              <ChevronLeft size={28} aria-hidden />
+            </button>
+            <article key={activeIndex} className="testimonial-slide-v2" aria-live="polite">
+              <div className="testimonial-page-count-v2">{activeIndex + 1} / {storyCount}</div>
+              <blockquote className="testimonial-quote-v2">
+                &ldquo;{activeItem.quote}&rdquo;
+              </blockquote>
           <div className="testimonial-author-v2">
-            <span>— {content.items[activeIndex].name}, {content.items[activeIndex].title}</span>
+            <span>— {activeItem.name}, {activeItem.title}</span>
+          </div>
+            </article>
+            <button
+              type="button"
+              className="testimonial-nav-button-v2"
+              onClick={showNextStory}
+              aria-label="Next customer story"
+            >
+              <ChevronRight size={28} aria-hidden />
+            </button>
           </div>
           <div className="testimonial-dots-v2">
-            {content.items.map((_, i) => (
-              <button
-                key={i}
-                className={`dot ${i === activeIndex ? 'active' : ''}`}
-                onClick={() => setActiveIndex(i)}
-              />
-            ))}
+            <span className="testimonial-fixed-dot-v2" aria-hidden />
+            <span className="testimonial-dots-label">客户故事</span>
           </div>
         </div>
       </div>
@@ -1355,35 +2046,79 @@ function TestimonialsSection({ content }: { content: TestimonialsContent }) {
 }
 
 // ============ PRICING SECTION ============
-function PricingSection({ content }: { content: PricingContent }) {
+function PricingSection({
+  content,
+  eyebrowTone = 'default',
+  onContactClick,
+}: {
+  content: PricingContent
+  eyebrowTone?: 'default' | 'cyan'
+  onContactClick?: () => void
+}) {
   return (
     <section className="module-section" id="pricing">
       <div className="container-v2">
-        <p className="module-eyebrow">{content.eyebrow}</p>
+        <SectionEyebrow icon="pricing" tone={eyebrowTone}>{content.eyebrow}</SectionEyebrow>
         <h2 className="module-title">{content.title}</h2>
         <p className="module-subtitle">{content.description}</p>
 
+        <div className="pricing-intro-note">
+          <span>{content.modesLabel}</span>
+          <div className="pricing-mode-tags">
+            {content.modes.map((mode) => (
+              <span key={mode} className="pricing-mode-tag">{mode}</span>
+            ))}
+          </div>
+          <p className="pricing-contact-note">{content.contactNote}</p>
+        </div>
+
         <div className="pricing-grid-v2">
           {content.plans.map((plan, i) => (
-            <div key={i} className={`pricing-card-v2 ${plan.badge === 'Enterprise' || plan.badge === '企业' ? 'featured' : ''}`}>
-              <span className="pricing-badge">{plan.badge}</span>
-              <h3 className="pricing-plan-name">{plan.name}</h3>
-              <div className="pricing-price">{plan.price}<span className="pricing-period">{plan.period}</span></div>
-              <ul className="pricing-features-v2">
-                {plan.features.map((feature, j) => (
-                  <li key={j} className="pricing-feature-v2">
-                    <Check size={16} className="check-icon" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <button className="btn-pricing">{plan.cta}</button>
-            </div>
+            <PricingPlanCard key={i} plan={plan} onContactClick={onContactClick} />
           ))}
         </div>
       </div>
     </section>
   )
+}
+
+function PricingPlanCard({
+  plan,
+  onContactClick,
+}: {
+  plan: PricingContent['plans'][number]
+  onContactClick?: () => void
+}) {
+  const isFeatured = plan.badge.includes('Enterprise') || plan.badge.includes('企业')
+  const opensContact = isContactCta(plan.cta)
+
+  return (
+    <div className={`pricing-card-v2 ${isFeatured ? 'featured' : ''}`}>
+      <span className="pricing-badge">{plan.badge}</span>
+      <h3 className="pricing-plan-name">{plan.name}</h3>
+      <div className="pricing-price">{plan.price}<span className="pricing-period">{plan.period}</span></div>
+      <ul className="pricing-features-v2">
+        {plan.features.map((feature, j) => (
+          <li key={j} className="pricing-feature-v2">
+            <Check size={16} className="check-icon" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        className="btn-pricing"
+        onClick={opensContact ? onContactClick : undefined}
+      >
+        {plan.cta}
+      </button>
+    </div>
+  )
+}
+
+function isContactCta(label: string) {
+  const normalized = label.trim().toLowerCase()
+  return normalized.includes('contact') || normalized.includes('talk') || normalized.includes('联系')
 }
 
 // ============ FAQ SECTION ============
@@ -1418,7 +2153,15 @@ function FaqSection({ content }: { content: FaqContent }) {
 }
 
 // ============ CTA SECTION ============
-function CtaSection({ content }: { content: CtaContent }) {
+function CtaSection({
+  content,
+  onContactClick,
+}: {
+  content: CtaContent
+  onContactClick?: () => void
+}) {
+  const secondaryOpensContact = isContactCta(content.secondaryCta)
+
   return (
     <section className="cta-section-v2">
       <div className="cta-bg">
@@ -1430,7 +2173,13 @@ function CtaSection({ content }: { content: CtaContent }) {
         <p className="cta-description">{content.description}</p>
         <div className="cta-buttons">
           <a href="/dashboard" className="btn-cta-primary">{content.primaryCta}</a>
-          <a href="/docs" className="btn-cta-secondary">{content.secondaryCta}</a>
+          {secondaryOpensContact ? (
+            <button type="button" className="btn-cta-secondary" onClick={onContactClick}>
+              {content.secondaryCta}
+            </button>
+          ) : (
+            <a href="/docs" className="btn-cta-secondary">{content.secondaryCta}</a>
+          )}
         </div>
       </div>
     </section>
@@ -1468,11 +2217,12 @@ function FooterSection({ content, companyName }: { content: FooterContent; compa
             <a href="#pricing" className="footer-link-v2">Pricing</a>
           </div>
 
-          <div className="footer-links-col">
-            <h4 className="footer-col-title">CONTACT</h4>
-            <a href="mailto:alice@omnimemory.ai" className="footer-link-v2">E. alice@omnimemory.ai</a>
-            <a href="https://omnimemory.ai" className="footer-link-v2">W. omnimemory.ai</a>
-          </div>
+            <div className="footer-links-col">
+              <h4 className="footer-col-title">CONTACT</h4>
+              <span className="footer-link-v2">E. alice@omnimemory.ai</span>
+              <a href="tel:15058996662" className="footer-link-v2">P. 15058996662</a>
+              <a href="https://omnimemory.ai" className="footer-link-v2">W. omnimemory.ai</a>
+            </div>
         </div>
 
         {/* Middle Section: Social Icons + Subscription */}
@@ -1547,19 +2297,28 @@ function getMarketingNavLinks({ navLinks, locale }: { navLinks: NavLink[]; local
     if (!link.dropdown) return link
 
     const hasOpenClawLink = link.dropdown.some((item) => item.href === ROUTE_PATHS.openclawPlugin)
+    const hasMemAuraLink = link.dropdown.some((item) => item.href === ROUTE_PATHS.memAura)
     const isPlaceholderSolutionsMenu = link.dropdown.length > 0 &&
-      link.dropdown.every((item) => item.href === '#' || item.href === ROUTE_PATHS.openclawPlugin)
+      link.dropdown.every((item) =>
+        item.href === '#' ||
+        item.href === ROUTE_PATHS.openclawPlugin ||
+        item.href === ROUTE_PATHS.memAura
+      )
 
-    if (hasOpenClawLink || !isPlaceholderSolutionsMenu) return link
+    if (!isPlaceholderSolutionsMenu) return link
 
     return {
       ...link,
       dropdown: [
         ...link.dropdown,
-        {
+        ...(!hasMemAuraLink ? [{
+          label: locale === 'zh' ? 'memAura 新基座' : 'memAura Memory Base',
+          href: ROUTE_PATHS.memAura,
+        }] : []),
+        ...(!hasOpenClawLink ? [{
           label: locale === 'zh' ? 'OpenClaw记忆插件 🔥' : 'OpenClaw Memory Plugin 🔥',
           href: ROUTE_PATHS.openclawPlugin,
-        },
+        }] : []),
       ],
     }
   })
@@ -1570,6 +2329,7 @@ function getRouteFromPathname({ pathname }: { pathname: string }): RouteKey {
   if (strippedPath.startsWith(ROUTE_PATHS.docs)) return 'docs'
   if (strippedPath.startsWith(ROUTE_PATHS.faq)) return 'faq'
   if (strippedPath.startsWith(ROUTE_PATHS.openclawPlugin)) return 'openclawPlugin'
+  if (strippedPath.startsWith(ROUTE_PATHS.memAura)) return 'memAura'
   if (strippedPath.startsWith(ROUTE_PATHS.apiKeys)) return 'apiKeys'
   if (strippedPath.startsWith(ROUTE_PATHS.uploads)) return 'uploads'
   if (strippedPath.startsWith(ROUTE_PATHS.usage)) return 'usage'
@@ -1662,6 +2422,7 @@ const ROUTE_PATHS = {
   docs: '/docs',
   faq: '/faq',
   openclawPlugin: '/solutions/openclaw-memory-plugin',
+  memAura: '/solutions/mem-aura',
   dashboard: '/dashboard',
   apiKeys: '/dashboard/api-keys',
   uploads: '/dashboard/uploads',
@@ -1748,18 +2509,54 @@ const contentByLocale: Record<Locale, AppContent> = {
       ctaLabel: 'Get Started',
     },
     hero: {
-      badge: 'Now in Beta',
-      titleLine1: 'Agents Live in Moments.',
-      titleLine2: 'We Give Them Experience',
-      description: 'Omni Memory is a multimodal memory system that enables AI to understand people beyond prompts, powering deeply personalized AI that evolves with human context over time.',
-      primaryCta: 'Start Building',
-      secondaryCta: 'View Documentation',
+      announcement: 'Thalamic foundation memAura is officially live',
+      titleLine1: 'The next generation',
+      titleLine2: 'intelligent memory foundation',
+      descriptionLead: 'One-stop AI memory solution:',
+      descriptionBody:
+        'Deep user profiles that evolve dynamically; memory is preserved and tamper-evident; materially better retention—the more you chat, the better it understands users.',
+      benefitsEyebrow: 'Platform benefits',
+      benefitTags: ['Stronger', 'Faster', 'Leaner'],
+      primaryCta: 'Try it now',
+      secondaryCta: 'Read the technical whitepaper',
+      solutionCta: 'Explore memAura',
+      heroStats: [
+        { kind: 'percent', num: '50', label: 'Token savings (up to)' },
+        { kind: 'percent', num: '80', label: 'Raw evidence retention' },
+        { kind: 'latency', maxMs: '500', label: 'Ultra-low response latency' },
+        { kind: 'trophy', label: 'SOTA among comparable products' },
+      ],
     },
     stats: {
       items: [
         { value: '#1', label: 'LoCoMo Benchmark' },
         { value: '77.8%', label: 'J-Score Accuracy' },
-        { value: '<700 ms', label: 'Retrieval Latency' },
+        { value: '<500 ms', label: 'Retrieval Latency' },
+      ],
+    },
+    capabilities: {
+      eyebrow: 'Complete Capabilities',
+      title: 'From multimodal perception to long-term cognition',
+      description: 'memAura turns scattered text, audio, visual signals, and behavioral events into continuously evolving memory assets.',
+      groups: [
+        {
+          label: 'Foundation capabilities',
+          items: [
+            { title: 'Omnimodal memory', description: 'Unifies text, auditory, visual, and event memories in one long-term memory foundation.' },
+            { title: 'High-fidelity memory storage', description: 'Keeps more than 80% raw evidence through event recognition and denoising, reducing hallucination caused by over-summary.' },
+            { title: 'Dynamic cognitive profile', description: 'Builds a user cognitive map that separates long-term preferences from short-term emotion and keeps the profile evolving.' },
+            { title: 'Cross-session integration', description: 'Breaks session isolation by aggregating persona, habits, constraints, and facts across the full user lifecycle.' },
+            { title: 'Temporal reasoning', description: 'Understands effective time, ordering, and expiry rules to judge which memories remain valid.' },
+          ],
+        },
+        {
+          label: 'Custom capabilities',
+          items: [
+            { title: 'Proactive reasoning', description: 'Predicts likely next events from interaction history and profile signals to support proactive intelligence.' },
+            { title: 'E2P state injection personalization', description: 'Stably injects preferences into the interaction state for low-cost personality consistency and preference learning.' },
+            { title: 'Unified cognition for multi-agent systems', description: 'Shares one memory base across agents, applications, and devices to keep personality and context consistent.' },
+          ],
+        },
       ],
     },
     features: {
@@ -1799,9 +2596,9 @@ const contentByLocale: Record<Locale, AppContent> = {
       eyebrow: 'Testimonials',
       title: 'Teams building with Omni Memory',
       items: [
+        { name: 'Leading companion robotics company in China', title: 'Product Lead', quote: 'The solution you proposed is excellent and exceeded our expectations.' },
+        { name: 'Legal-domain Agent company in China', title: 'Technical Lead', quote: 'After integrating Omni Memory, our AI product experience improved significantly, user retention increased noticeably, and our cost consumption also came down.' },
         { name: 'Sarah Chen', title: 'Head of AI, Aurora Labs', quote: 'We replaced three internal services with Omni Memory. Agent latency dropped 40% immediately—it just works.' },
-        { name: 'Marcus Williams', title: 'VP Product, Northwind', quote: 'Our clinical assistants finally remember patient context across sessions. Game changer for healthcare AI.' },
-        { name: 'Elena Rodriguez', title: 'Founder, Signalwave', quote: 'The policy controls let us scope memory by project without building custom infrastructure. Shipped in a week.' },
       ],
     },
     partners: {
@@ -1809,21 +2606,102 @@ const contentByLocale: Record<Locale, AppContent> = {
       partners: [
         { name: 'Tsinghua University', nameCn: '清华大学', logo: '/partner/tsinghua.png' },
         { name: 'Peking University', nameCn: '北京大学', logo: '/partner/peking.png' },
-        { name: 'Zhejiang University', nameCn: '浙江大学', logo: '/partner/zhejiang.png' },
-        { name: 'NUS', logo: '/partner/nus.png' },
+        { name: 'The Chinese University of Hong Kong', nameCn: '香港中文大学', logo: '/partner/cuhk.png' },
+        { name: 'HKUST', nameCn: '香港科技大学', logo: '/partner/hkust.svg', logoClassName: 'partner-logo-img--hkust' },
+        { name: 'NUS', logo: '/partner/nus.png', logoClassName: 'partner-logo-img--nus' },
         { name: 'VU Amsterdam', logo: '/partner/vu-amsterdam.png' },
         { name: 'USC', nameCn: '南加州大学', logo: '/partner/usc.png' },
         { name: 'Virginia Tech', nameCn: '弗吉尼亚理工', logo: '/partner/virginia-tech.png' },
       ],
     },
     pricing: {
-      eyebrow: 'Pricing',
+      eyebrow: '价格 / PRICING',
       title: 'Plans that scale with you',
       description: 'Start free, upgrade as you grow. Predictable, usage-based pricing.',
+      modesLabel: 'Supported billing models',
+      modes: ['By device', 'Annual contract', 'QPS / throughput', 'Deployment scope'],
+      contactNote: 'Enterprise pricing can be tailored by deployment scope, device fleet, annual usage, and QPS requirements.',
       plans: [
         { badge: 'Starter', name: 'Build', price: 'Free', period: 'forever', cta: 'Start Free', features: ['2M memories', 'Multi-modal API', 'Community support'] },
         { badge: 'Enterprise', name: 'Govern', price: 'Custom', period: '', cta: 'Contact Us', features: ['Unlimited memories', 'Dedicated VPC', 'Custom SLAs', 'Dedicated support'] },
       ],
+    },
+    costReduction: {
+      eyebrow: '降本数据 / PERFORMANCE METRICS',
+      title: 'Measured cost optimization data',
+      description: 'Full-scenario comparison before and after adopting the memory solution. Input tokens decreased by 49.9% in measurement.',
+      note: 'Data is based on memAura production measurements. Actual optimization depends on scenario and business logic.',
+      rows: [
+        { model: 'Model A', scene: 'Medium usage · 24 rounds/day', beforeTokens: '4,353,720', afterTokens: '2,176,860', beforeCost: '20', afterCost: '17.64', diff: '2.36', ratio: '11.80%' },
+        { model: 'Model A', scene: 'Heavy usage · 60 rounds/day', beforeTokens: '20,016,600', afterTokens: '10,008,300', beforeCost: '87.12', afterCost: '76.11', diff: '11.01', ratio: '12.64%' },
+        { model: 'Model A', scene: 'Long context · 40 rounds/day · 500 input tokens/round', beforeTokens: '26,134,000', afterTokens: '13,067,000', beforeCost: '98.61', afterCost: '85.98', diff: '12.63', ratio: '12.81%' },
+      ],
+    },
+    customerCase: {
+      eyebrow: '客户案例 / INDUSTRY VERTICAL',
+      title: 'Long-term emotional memory for companion robots',
+      summary: 'A leading home companion robot team uses the memAura architecture to give children’s robots stable long-term emotional memory.',
+      backgroundTitle: 'Customer background',
+      painTitle: 'Core challenges',
+      solutionTitle: 'The OmniMemory Advantage',
+      benchmarkTitle: 'Before RAG vs. After OmniMemory',
+      metricBeforeLabel: 'Before (RAG)',
+      metricAfterLabel: 'After (OmniMemory)',
+      metricChangeLabel: 'Change',
+      background: 'A leading companion robot brand serves young users aged 18–28 with interactive companionship and emotional support.',
+      metrics: [
+        { label: 'Hardware shipment', value: '20k devices' },
+        { label: 'Daily active users', value: '1,000 DAU' },
+      ],
+      challenges: [
+        'Memory retrieval latency stayed around 500 ms, limiting smooth real-time companionship.',
+        'Single-turn interaction consumed about 1.8M tokens, pushing model-call cost too high.',
+        '30-day churn stayed high because the robot could not sustain long-term emotional continuity.',
+      ],
+      solutions: [
+        { title: 'Multimodal knowledge vectorization', description: 'Turn visual context and conversation events into durable long-term memory nodes.' },
+        { title: 'E2P state injection', description: 'Resume the prior interaction state after restart so emotional continuity is preserved.' },
+        { title: 'Lightweight non-invasive adaptation', description: 'Control retrieval latency while protecting privacy and minimizing integration cost.' },
+      ],
+      benchmark: [
+        { dimension: 'Memory retrieval latency', before: '500 ms', after: '400 ms', change: '-20%' },
+        { dimension: 'Single interaction TK cost', before: '1.8M', after: '950k', change: '-47%' },
+        { dimension: '30-day churn', before: '48%', after: '26%', change: '-22 pct' },
+        { dimension: 'Daily active users', before: '1,000', after: '2,300', change: '+130%' },
+        { dimension: 'Daily interactions per user', before: '8 rounds', after: '22 rounds', change: '+175%' },
+        { dimension: 'Long-term memory recall accuracy', before: '34%', after: '91%', change: '+57 pct' },
+      ],
+    },
+    businessContact: {
+      eyebrow: '商务咨询 / BUSINESS CONTACT',
+      title: 'Design a deployment and pricing model for your scenario',
+      description: 'Pricing can be discussed by device, year, QPS, or deployment scope. Talk to us before choosing a plan.',
+      phoneLabel: 'Business / WeChat',
+      phone: '15058996662',
+      wechat: '15058996662',
+      cta: 'Contact us',
+      modalEyebrow: 'BUSINESS CONTACT',
+      modalTitle: 'Contact our team',
+      wechatLabel: 'Business / WeChat contact',
+      copyText: 'Copy',
+      copiedText: 'Copied',
+      copyFailedText: 'Copy failed. Please copy the contact manually.',
+      contactFieldLabel: '1. Leave your email or contact information',
+      contactPlaceholder: 'Email, phone, or WeChat ID',
+      companyTypeLabel: '2. What type of company are you?',
+      companyTypeOptions: [
+        'AI companion software',
+        'AI virtual human / virtual customer service',
+        'Smart hardware / IoT',
+        'Companion robot',
+        'Vertical agent',
+        'Embodied AI',
+      ],
+      submitText: 'Submit registration',
+      requiredText: 'Please leave your email or contact information.',
+      successText: 'Registered. We will contact you soon.',
+      closeLabel: 'Close contact form',
+      formHint: 'You can also copy the WeChat contact above and reach us directly.',
     },
     faq: {
       eyebrow: 'FAQ',
@@ -1833,7 +2711,7 @@ const contentByLocale: Record<Locale, AppContent> = {
         { question: 'What AI models are supported?', answer: 'We normalize across providers. Write once, retrieve across GPT, Claude, Gemini, or custom models.' },
         { question: 'What data types can be stored?', answer: 'Text, audio transcripts, images with context, and structured events. All enriched with entity and intent signals.' },
         { question: 'How do you handle privacy?', answer: 'Automated PII detection, configurable retention, consent tracking, and right-to-forget workflows. SOC 2 Type II certified.' },
-        { question: "What's the retrieval latency?", answer: 'P95 recall under 700ms  globally with multi-region caching and hybrid retrieval.' },
+        { question: "What's the retrieval latency?", answer: 'P95 recall under 500ms globally with multi-region caching and hybrid retrieval.' },
       ],
     },
     cta: {
@@ -1883,18 +2761,53 @@ const contentByLocale: Record<Locale, AppContent> = {
       ctaLabel: '开始使用',
     },
     hero: {
-      badge: '公测中',
-      titleLine1: '记忆',
-      titleLine2: '决定智能上限',
-      description: 'Omni Memory 构建多模态记忆系统，让 AI 以真实上下文持续成长，打造真正理解用户的个性化智能。',
-      primaryCta: '开始构建',
-      secondaryCta: '查看文档',
+      announcement: '丘脑新基座 memAura 正式发布',
+      titleLine1: '新一代',
+      titleLine2: '智能记忆基座',
+      descriptionLead: '一站式 AI 记忆解决方案：',
+      descriptionBody: '动态演化的深度用户画像，记忆信息不丢失不篡改，显著提升留存，越聊越懂用户。',
+      benefitsEyebrow: '基座效益',
+      benefitTags: ['更强', '更快', '更省'],
+      primaryCta: '立即体验试用',
+      secondaryCta: '查看技术白皮书',
+      solutionCta: '了解新基座',
+      heroStats: [
+        { kind: 'percent', num: '50', label: 'Token 最高节省' },
+        { kind: 'percent', num: '80', label: '原始证据留存' },
+        { kind: 'latency', maxMs: '500', label: '超低响应延迟' },
+        { kind: 'trophy', label: '同类竞品 SOTA 表现' },
+      ],
     },
     stats: {
       items: [
         { value: '#1', label: 'LoCoMo 基准测试' },
         { value: '77.8%', label: 'J-Score 准确率' },
         { value: '<1s', label: '检索延迟' },
+      ],
+    },
+    capabilities: {
+      eyebrow: '完整功能',
+      title: '从全模态感知到长期认知资产',
+      description: 'memAura 将文本、听觉、视觉与行为事件统一沉淀为可长期演化的用户记忆资产。',
+      groups: [
+        {
+          label: '基础能力',
+          items: [
+            { title: '全模态记忆', description: '不仅实现文本记忆，也统一听觉、视觉等模态的长期记忆。' },
+            { title: '高保真记忆存储', description: '通过事件识别与降噪保留 80% 以上原始证据，不做过度摘要，从根源降低 AI 幻觉。' },
+            { title: '动态认知画像', description: '自动构建用户认知地图，区分长期偏好与短期情绪，让 AI 真正理解用户。' },
+            { title: '跨会话整合', description: '聚合不同会话周期中的人设偏好、生活习惯与禁忌诉求，形成完整用户画像。' },
+            { title: '时序推理', description: '识别信息生效时间、新旧顺序与过期规则，判断哪段记忆仍然有效。' },
+          ],
+        },
+        {
+          label: '定制化能力',
+          items: [
+            { title: '主动推理', description: '结合互动数据和画像模型预测下一步可能事件，在交互中实现主动智能。' },
+            { title: 'E2P 状态注入个性化', description: '稳定注入用户偏好，以超低成本实现人格一致性建模与偏好持续学习。' },
+            { title: '多 Agent 统一认知底座', description: '一套记忆支持多场景 Agent 共用，实现跨应用、跨设备的人格一致。' },
+          ],
+        },
       ],
     },
     features: {
@@ -1914,7 +2827,7 @@ const contentByLocale: Record<Locale, AppContent> = {
       description: '简单三步，让 AI 拥有持久记忆。',
       steps: [
         { title: '摄取', description: '通过 API 写入对话、文件和事件。' },
-        { title: '增强', description: '分类、去重与衰减评分，保持记忆新鲜。' },
+        { title: '增强', description: '分类、去重与衰减评分，构建长短期记忆。' },
         { title: '检索', description: '按用户与意图检索，毫秒级返回上下文。' },
       ],
     },
@@ -1934,9 +2847,9 @@ const contentByLocale: Record<Locale, AppContent> = {
       eyebrow: '用户故事',
       title: '团队使用 Omni Memory',
       items: [
+        { name: '某国内头部陪伴机器人', title: '产品负责人', quote: '我觉得你们给出的方案非常棒，超出预期。' },
+        { name: '某国内法律领域Agent', title: '技术负责人', quote: '接入Omni Memory后，我们的AI产品体验提高了很多，用户留存率显著提升，同时我们的成本消耗也降下来了。' },
         { name: 'Sarah Chen', title: 'Aurora Labs AI 负责人', quote: '我们用 Omni Memory 替代了多个内部服务，延迟显著下降。' },
-        { name: 'Marcus Williams', title: 'Northwind 产品副总裁', quote: '临床助手终于能跨会话记住上下文，落地速度极快。' },
-        { name: 'Elena Rodriguez', title: 'Signalwave 创始人', quote: '策略控制让我们无需重建基础设施即可上线。' },
       ],
     },
     partners: {
@@ -1944,21 +2857,102 @@ const contentByLocale: Record<Locale, AppContent> = {
       partners: [
         { name: 'Tsinghua University', nameCn: '清华大学', logo: '/partner/tsinghua.png' },
         { name: 'Peking University', nameCn: '北京大学', logo: '/partner/peking.png' },
-        { name: 'Zhejiang University', nameCn: '浙江大学', logo: '/partner/zhejiang.png' },
-        { name: 'NUS', logo: '/partner/nus.png' },
+        { name: 'The Chinese University of Hong Kong', nameCn: '香港中文大学', logo: '/partner/cuhk.png' },
+        { name: 'HKUST', nameCn: '香港科技大学', logo: '/partner/hkust.svg', logoClassName: 'partner-logo-img--hkust' },
+        { name: 'NUS', logo: '/partner/nus.png', logoClassName: 'partner-logo-img--nus' },
         { name: 'VU Amsterdam', logo: '/partner/vu-amsterdam.png' },
         { name: 'USC', nameCn: '南加州大学', logo: '/partner/usc.png' },
         { name: 'Virginia Tech', nameCn: '弗吉尼亚理工', logo: '/partner/virginia-tech.png' },
       ],
     },
     pricing: {
-      eyebrow: '价格',
+      eyebrow: '价格 / PRICING',
       title: '随你扩展的方案',
       description: '从免费开始，随成长升级。可预测的按量计费。',
+      modesLabel: '支持的计费模式',
+      modes: ['按台', '按年', '按 QPS / 吞吐量', '按部署规模'],
+      contactNote: '企业价格可按部署范围、设备规模、年度用量和 QPS 需求定制，欢迎先咨询商务。',
       plans: [
-        { badge: '入门', name: '构建', price: '免费', period: '永久', cta: '免费开始', features: ['200万条记忆', '多模态 API', '社区支持'] },
-        { badge: '企业', name: '治理', price: '定制', period: '', cta: '联系我们', features: ['无限记忆', '专属 VPC', '定制 SLA', '专属支持'] },
+        { badge: '入门（开发者）', name: '构建', price: '免费', period: '永久', cta: '免费开始', features: ['200万条记忆', '社区支持'] },
+        { badge: '企业', name: '治理', price: '定制', period: '', cta: '联系我们', features: ['无限记忆', '主动智能', '多模态', '专属支持'] },
       ],
+    },
+    costReduction: {
+      eyebrow: '降本数据 / PERFORMANCE METRICS',
+      title: '实测成本优化数据',
+      description: '全场景成本实测对比（接入记忆方案前 VS 接入记忆方案后），输入 tokens 实测降低 49.9%。',
+      note: '数据基于 memAura 生产环境实测得出，具体优化效果受场景与业务逻辑影响。',
+      rows: [
+        { model: '模型A', scene: '中等（每天24轮）', beforeTokens: '4,353,720', afterTokens: '2,176,860', beforeCost: '20', afterCost: '17.64', diff: '2.36', ratio: '11.80%' },
+        { model: '模型A', scene: '重度（每天60轮）', beforeTokens: '20,016,600', afterTokens: '10,008,300', beforeCost: '87.12', afterCost: '76.11', diff: '11.01', ratio: '12.64%' },
+        { model: '模型A', scene: '长上下文（每天40轮，每轮输入500 token）', beforeTokens: '26,134,000', afterTokens: '13,067,000', beforeCost: '98.61', afterCost: '85.98', diff: '12.63', ratio: '12.81%' },
+      ],
+    },
+    customerCase: {
+      eyebrow: '客户案例 / INDUSTRY VERTICAL',
+      title: '陪伴机器人深度适配：长效情感记忆机器人',
+      summary: '某国内领先的家用陪伴机器人团队，基于 memAura 架构完成了儿童陪伴机器人底层升级。',
+      backgroundTitle: '客户背景',
+      painTitle: '核心挑战',
+      solutionTitle: '解决方案（The OmniMemory Advantage）',
+      benchmarkTitle: '传统memory方案 vs. 我们的方案（omnimemory）',
+      metricBeforeLabel: '传统memory方案',
+      metricAfterLabel: '我们的方案（omnimemory）',
+      metricChangeLabel: '变化',
+      background: '某国内领先的陪伴机器人品牌，致力于为 18–28 岁年轻人提供互动式陪护与情感支持。',
+      metrics: [
+        { label: '硬件总销量', value: '2 万台' },
+        { label: '传统memory方案日活（DAU）', value: '1,000' },
+      ],
+      challenges: [
+        '记忆检索延迟约 500 ms，影响实时陪伴体验的流畅度。',
+        '单次交互 TK 消耗约 180 万，模型调用成本偏高。',
+        '30 天退货率达到 48%，长期情感连续性不足。',
+      ],
+      solutions: [
+        { title: '多模态知识矢量化', description: '将视觉上下文与会话事件实时沉淀为长期记忆节点。' },
+        { title: 'E2P 状态注入技术', description: '允许机器人在重启后瞬间闪回至上一次交互语境，确保情感连接连续。' },
+        { title: '非侵入式轻量化适配', description: '专项脱敏处理并控制检索延迟，降低接入成本。' },
+      ],
+      benchmark: [
+        { dimension: '记忆检索延迟', before: '500 ms', after: '400 ms', change: '-20%' },
+        { dimension: '单次交互 TK 消耗', before: '180 万', after: '95 万', change: '-47%' },
+        { dimension: '退货率（30天）', before: '48%', after: '26%', change: '-22 pct' },
+        { dimension: '日活（DAU）', before: '1,000', after: '2,300', change: '+130%' },
+        { dimension: '日均交互轮次', before: '8 轮', after: '22 轮', change: '+175%' },
+        { dimension: '长时记忆召回准确率', before: '34%', after: '91%', change: '+57 pct' },
+      ],
+    },
+    businessContact: {
+      eyebrow: '商务咨询 / BUSINESS CONTACT',
+      title: '为你的场景定制部署与计费方式',
+      description: '可按设备、按年、按 QPS 或按部署范围沟通定价。正式选择方案前，先和我们聊聊。',
+      phoneLabel: '商务联系',
+      phone: '15058996662',
+      wechat: '15058996662',
+      cta: '联系我们',
+      modalEyebrow: 'BUSINESS CONTACT',
+      modalTitle: '商务/微信联系',
+      wechatLabel: '商务/微信联系',
+      copyText: '一键复制',
+      copiedText: '已复制',
+      copyFailedText: '复制失败，请手动复制联系方式。',
+      contactFieldLabel: '1、留下您的邮箱或联系方式',
+      contactPlaceholder: '邮箱、手机号或微信号',
+      companyTypeLabel: '2、您是什么类型公司？',
+      companyTypeOptions: [
+        'AI陪伴软件',
+        'AI虚拟人/虚拟客服',
+        '智能硬件/IoT',
+        '陪伴机器人',
+        '垂类Agent',
+        '具身智能',
+      ],
+      submitText: '提交登记',
+      requiredText: '请留下您的邮箱或联系方式。',
+      successText: '已收到登记，我们会尽快联系您。',
+      closeLabel: '关闭联系窗口',
+      formHint: '也可以直接复制上方微信联系商务。',
     },
     faq: {
       eyebrow: '常见问题',
@@ -1972,7 +2966,7 @@ const contentByLocale: Record<Locale, AppContent> = {
       ],
     },
     cta: {
-      title: '让 AI 拥有应得的记忆',
+      title: '记忆赋予AI生命',
       description: '立即开始使用持久的上下文记忆。免费套餐可用。',
       primaryCta: '开始构建',
       secondaryCta: '查看文档',
@@ -1999,6 +2993,7 @@ type RouteKey =
   | 'docs'
   | 'faq'
   | 'openclawPlugin'
+  | 'memAura'
   | 'dashboard'
   | 'apiKeys'
   | 'uploads'
@@ -2014,12 +3009,16 @@ interface AppContent {
   navbar: NavbarContent
   hero: HeroContent
   stats: StatsContent
+  capabilities: CapabilitiesContent
   features: FeaturesContent
   howItWorks: HowItWorksContent
+  costReduction: CostReductionContent
   developers: DevelopersContent
+  customerCase: CustomerCaseContent
   testimonials: TestimonialsContent
   partners: PartnersContent
   pricing: PricingContent
+  businessContact: BusinessContactContent
   faq: FaqContent
   cta: CtaContent
   footer: FooterContent
@@ -2035,14 +3034,103 @@ interface NavLink {
   href?: string
   dropdown?: { label: string; href: string; icon?: string }[]
 }
-interface HeroContent { badge: string; titleLine1: string; titleLine2: string; description: string; primaryCta: string; secondaryCta: string }
+type HeroStatRow =
+  | { kind: 'percent'; num: string; label: string }
+  | { kind: 'latency'; maxMs: string; label: string }
+  | { kind: 'trophy'; label: string }
+
+interface HeroContent {
+  announcement: string
+  titleLine1: string
+  titleLine2: string
+  descriptionLead: string
+  descriptionBody: string
+  benefitsEyebrow: string
+  benefitTags: [string, string, string]
+  primaryCta: string
+  secondaryCta: string
+  solutionCta: string
+  heroStats: [HeroStatRow, HeroStatRow, HeroStatRow, HeroStatRow]
+}
 interface StatsContent { items: { value: string; label: string }[] }
+interface CapabilityItem { title: string; description: string }
+interface CapabilitiesContent {
+  eyebrow: string
+  title: string
+  description: string
+  groups: { label: string; items: CapabilityItem[] }[]
+}
+interface CostReductionContent {
+  eyebrow: string
+  title: string
+  description: string
+  note: string
+  rows: {
+    model: string
+    scene: string
+    beforeTokens: string
+    afterTokens: string
+    beforeCost: string
+    afterCost: string
+    diff: string
+    ratio: string
+  }[]
+}
+interface CustomerCaseContent {
+  eyebrow: string
+  title: string
+  summary: string
+  backgroundTitle: string
+  painTitle: string
+  solutionTitle: string
+  benchmarkTitle: string
+  metricBeforeLabel: string
+  metricAfterLabel: string
+  metricChangeLabel: string
+  background: string
+  metrics: { label: string; value: string }[]
+  challenges: string[]
+  solutions: { title: string; description: string }[]
+  benchmark: { dimension: string; before: string; after: string; change: string }[]
+}
+interface BusinessContactContent {
+  eyebrow: string
+  title: string
+  description: string
+  phoneLabel: string
+  phone: string
+  wechat: string
+  cta: string
+  modalEyebrow: string
+  modalTitle: string
+  wechatLabel: string
+  copyText: string
+  copiedText: string
+  copyFailedText: string
+  contactFieldLabel: string
+  contactPlaceholder: string
+  companyTypeLabel: string
+  companyTypeOptions: string[]
+  submitText: string
+  requiredText: string
+  successText: string
+  closeLabel: string
+  formHint: string
+}
 interface FeaturesContent { eyebrow: string; title: string; description: string; items: { icon: string; tag: string; title: string; description: string }[] }
 interface HowItWorksContent { eyebrow: string; title: string; description: string; steps: { title: string; description: string }[] }
 interface DevelopersContent { eyebrow: string; title: string; description: string; primaryCta: string; secondaryCta: string; codeTabs: { label: string; code: string }[] }
 interface TestimonialsContent { eyebrow: string; title: string; items: { name: string; title: string; quote: string }[] }
-interface PartnersContent { label: string; partners: { name: string; nameCn?: string; logo?: string }[] }
-interface PricingContent { eyebrow: string; title: string; description: string; plans: { badge: string; name: string; price: string; period: string; cta: string; features: string[] }[] }
+interface PartnersContent { label: string; partners: { name: string; nameCn?: string; logo?: string; fullColor?: boolean; logoClassName?: string }[] }
+interface PricingContent {
+  eyebrow: string
+  title: string
+  description: string
+  modesLabel: string
+  modes: string[]
+  contactNote: string
+  plans: { badge: string; name: string; price: string; period: string; cta: string; features: string[] }[]
+}
 interface FaqContent { eyebrow: string; title: string; description: string; items: { question: string; answer: string }[] }
 interface CtaContent { title: string; description: string; primaryCta: string; secondaryCta: string }
 interface FooterContent { brandName: string; tagline: string; copyright: string; links: { label: string; href: string }[] }

@@ -28,30 +28,30 @@ interface DocsPageProps {
 
 const pageMap: Record<string, DocPage> = {
   'guides/setup': setupGuidePage,
-  'sdk/python': pythonSdkPage,
-  'sdk/javascript': javascriptSdkPage,
-  'concepts': conceptsPage,
-  'guides/agent': agentIntegrationPage,
-  'guides/openclaw-memory-plugin': openClawPluginPage,
-  'guides/multi-speaker': multiSpeakerPage,
-  'pipelines': pipelinesPage,
-  'reference/errors': errorsPage,
-  'reference/limits': limitsPage,
-  'reference/changelog': changelogPage,
+  // 'sdk/python': pythonSdkPage,
+  // 'sdk/javascript': javascriptSdkPage,
+  // 'concepts': conceptsPage,
+  // 'guides/agent': agentIntegrationPage,
+  // 'guides/openclaw-memory-plugin': openClawPluginPage,
+  // 'guides/multi-speaker': multiSpeakerPage,
+  // 'pipelines': pipelinesPage,
+  // 'reference/errors': errorsPage,
+  // 'reference/limits': limitsPage,
+  // 'reference/changelog': changelogPage,
 }
 
 const pageOrder = [
   'guides/setup',
-  'sdk/python',
-  'sdk/javascript',
-  'concepts',
-  'pipelines',
-  'guides/agent',
-  'guides/openclaw-memory-plugin',
-  'guides/multi-speaker',
-  'reference/errors',
-  'reference/limits',
-  'reference/changelog',
+  // 'sdk/python',
+  // 'sdk/javascript',
+  // 'concepts',
+  // 'pipelines',
+  // 'guides/agent',
+  // 'guides/openclaw-memory-plugin',
+  // 'guides/multi-speaker',
+  // 'reference/errors',
+  // 'reference/limits',
+  // 'reference/changelog',
 ]
 
 // Build search index from all pages
@@ -274,16 +274,11 @@ export function DocsPage({ locale, onNavigate, onLocaleToggle }: DocsPageProps) 
                 <ul>
                   {section.items.map((item, j) => {
                     const slug = item.href.replace('/docs/', '')
-                    const active = slug === currentSlug || (item.href === '/docs/sdk/python' && currentSlug === 'sdk/python')
-                    const isOpenClawDoc = item.href === '/docs/guides/openclaw-memory-plugin'
+                    const active = slug === currentSlug
                     return (
                       <li key={j}>
                         <a href={item.href} onClick={(e) => { e.preventDefault(); handleNavClick(item.href) }} className={active ? 'active' : ''}>
-                          {isOpenClawDoc ? (
-                            <span style={{ color: '#d14b57', fontWeight: 700 }}>{t(item.title)}</span>
-                          ) : (
-                            t(item.title)
-                          )}
+                          {t(item.title)}
                         </a>
                         {item.items && (
                           <ul className="mintlify-nav-sub">
@@ -544,8 +539,8 @@ function NotFound({ slug, onNav }: { slug: string; onNav: (h: string) => void })
       <div className="icon">📄</div>
       <h1>Page not found</h1>
       <p>The page <code>{slug}</code> doesn't exist.</p>
-      <a href="/docs/sdk/python" onClick={(e) => { e.preventDefault(); onNav('/docs/sdk/python') }}>
-        Go to Python SDK →
+      <a href="/docs/guides/setup" onClick={(e) => { e.preventDefault(); onNav('/docs/guides/setup') }}>
+        Go to Account Setup →
       </a>
     </div>
   )
