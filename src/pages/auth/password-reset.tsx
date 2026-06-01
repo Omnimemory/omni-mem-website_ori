@@ -16,6 +16,10 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // number of seconds.
 const DEFAULT_RATE_LIMIT_SECONDS = 60
 
+// Cooldown applied after a code is successfully sent, to throttle resends
+// before the user hits the server-side rate limit.
+const RESEND_COOLDOWN_SECONDS = 60
+
 // Extract the wait time (in seconds) from messages like
 // "you can only request this after 56 seconds.".
 function extractWaitSeconds(text?: string | null): number | null {
@@ -83,8 +87,10 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
         }
         throw new Error(serverMessage ?? '发送验证码失败')
       }
+      setOtp('')
       setStep('verify')
       setSuccessMessage('验证码已发送，请检查邮箱。')
+      setCooldown(RESEND_COOLDOWN_SECONDS)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '发送验证码失败')
     } finally {
@@ -213,11 +219,7 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
           </>
         )}
 
-        {cooldown > 0 ? (
-          <p className="text-sm text-amber-500">发送过于频繁，请在 {cooldown} 秒后重试。</p>
-        ) : (
-          errorMessage && <p className="text-sm text-danger-500">{errorMessage}</p>
-        )}
+        {errorMessage && <p className="text-sm text-danger-500">{errorMessage}</p>}
         {successMessage && <p className="text-sm text-emerald-500">{successMessage}</p>}
 
         {step === 'request' && (
@@ -244,10 +246,11 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
             <Button
               variant="flat"
               radius="full"
-              isDisabled={isBusy}
-              onPress={() => { clearMessages(); setOtp(''); setStep('request') }}
+              isLoading={isBusy}
+              isDisabled={isBusy || cooldown > 0}
+              onPress={handleRequest}
             >
-              重新发送
+              {cooldown > 0 ? `${cooldown} 秒后重试` : '重新发送'}
             </Button>
           </div>
         )}
