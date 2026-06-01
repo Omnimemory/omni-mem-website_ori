@@ -125,12 +125,25 @@ export function App() {
   // When arriving from a password-reset email link, normalize the URL to the
   // update-password route (keeping the recovery token in the hash) and select
   // that route so the user sees the new-password form instead of the homepage.
+  // Also listen for later hash/history changes in case the recovery token is
+  // appended after the initial load.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!isPasswordRecoveryLink()) return
-    const target = buildLocalePathname({ pathname: ROUTE_PATHS.updatePassword, locale })
-    window.history.replaceState(null, '', `${target}${window.location.hash}`)
-    setRouteKey('updatePassword')
+
+    function routeToUpdatePassword() {
+      if (!isPasswordRecoveryLink()) return
+      const target = buildLocalePathname({ pathname: ROUTE_PATHS.updatePassword, locale })
+      window.history.replaceState(null, '', `${target}${window.location.hash}`)
+      setRouteKey('updatePassword')
+    }
+
+    routeToUpdatePassword()
+    window.addEventListener('hashchange', routeToUpdatePassword)
+    window.addEventListener('popstate', routeToUpdatePassword)
+    return () => {
+      window.removeEventListener('hashchange', routeToUpdatePassword)
+      window.removeEventListener('popstate', routeToUpdatePassword)
+    }
   }, [locale])
 
   useEffect(() => {
