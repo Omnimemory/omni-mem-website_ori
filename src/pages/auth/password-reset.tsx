@@ -1,5 +1,5 @@
 import { Button, Card, CardBody, CardHeader, Input } from '@nextui-org/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getApiEnv } from '../../lib/env'
 import { validatePasswordComplexity } from '../../lib/password'
 
@@ -11,6 +11,18 @@ interface PasswordResetPageProps {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Default wait time when the server reports a rate limit without a parseable
+// number of seconds.
+const DEFAULT_RATE_LIMIT_SECONDS = 60
+
+// Extract the wait time (in seconds) from messages like
+// "you can only request this after 56 seconds.".
+function extractWaitSeconds(text?: string | null): number | null {
+  if (!text) return null
+  const match = text.match(/(\d+)\s*second/i)
+  return match ? Number(match[1]) : null
+}
 
 type Step = 'request' | 'verify' | 'set-password'
 
@@ -25,6 +37,16 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
   const [isBusy, setIsBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [cooldown, setCooldown] = useState(0)
+
+  // Tick down the resend cooldown once per second.
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => {
+      setCooldown((seconds) => (seconds <= 1 ? 0 : seconds - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   function clearMessages() {
     setErrorMessage(null)
@@ -44,12 +66,27 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-      const data = (await response.json().catch(() => ({}))) as { message?: string }
-      if (!response.ok) throw new Error(data?.message ?? '发送验证码失败')
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string
+        msg?: string
+        error_code?: string
+      }
+      if (!response.ok) {
+        const serverMessage = data?.msg ?? data?.message
+        // Rate limited: tell the user exactly how long to wait and start a
+        // countdown that disables the resend button.
+        if (response.status === 429 || data?.error_code === 'over_email_send_rate_limit') {
+          const waitSeconds = extractWaitSeconds(serverMessage) ?? DEFAULT_RATE_LIMIT_SECONDS
+          setCooldown(waitSeconds)
+          setErrorMessage(`发送过于频繁，请在 ${waitSeconds} 秒后重试。`)
+          return
+        }
+        throw new Error(serverMessage ?? '发送验证码失败')
+      }
       setStep('verify')
       setSuccessMessage('验证码已发送，请检查邮箱。')
     } catch (error) {
-      setErrorMessage(String(error))
+      setErrorMessage(error instanceof Error ? error.message : '发送验证码失败')
     } finally {
       setIsBusy(false)
     }
@@ -176,7 +213,11 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
           </>
         )}
 
-        {errorMessage && <p className="text-sm text-danger-500">{errorMessage}</p>}
+        {cooldown > 0 ? (
+          <p className="text-sm text-amber-500">发送过于频繁，请在 {cooldown} 秒后重试。</p>
+        ) : (
+          errorMessage && <p className="text-sm text-danger-500">{errorMessage}</p>
+        )}
         {successMessage && <p className="text-sm text-emerald-500">{successMessage}</p>}
 
         {step === 'request' && (
@@ -184,9 +225,10 @@ export function PasswordResetPage({ signInPath, onNavigate }: PasswordResetPageP
             className="bg-teal text-white hover:bg-seafoam"
             radius="full"
             isLoading={isBusy}
+            isDisabled={cooldown > 0}
             onPress={handleRequest}
           >
-            发送验证码
+            {cooldown > 0 ? `${cooldown} 秒后可重试` : '发送验证码'}
           </Button>
         )}
         {step === 'verify' && (
