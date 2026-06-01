@@ -9,6 +9,30 @@ interface UpdatePasswordPageProps {
   onNavigate: (path: string) => void
 }
 
+interface PasswordResetErrorBody {
+  message?: string
+  msg?: string
+  error_code?: string
+}
+
+// Friendly Chinese messages for known server error codes.
+const ERROR_CODE_MESSAGES: Record<string, string> = {
+  same_password: '新密码不能与旧密码相同。',
+  weak_password: '密码强度不足，请更换更复杂的密码。',
+  over_request_rate_limit: '操作过于频繁，请稍后再试。',
+  expired_token: '链接已失效，请重新发起密码重置。',
+  bad_jwt: '链接已失效，请重新发起密码重置。',
+}
+
+// Resolve the most useful error message: a friendly mapping for known codes,
+// otherwise the server-provided text, then a generic fallback.
+function resolvePasswordResetError(data: PasswordResetErrorBody): string {
+  if (data.error_code && ERROR_CODE_MESSAGES[data.error_code]) {
+    return ERROR_CODE_MESSAGES[data.error_code]
+  }
+  return data.msg ?? data.message ?? '密码更新失败'
+}
+
 export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: UpdatePasswordPageProps) {
   const apiBaseUrl = useMemo(() => getApiEnv().apiBaseUrl, [])
   const resetToken = useMemo(() => {
@@ -57,15 +81,15 @@ export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: Up
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: resetToken, password }),
       })
-      const data = (await response.json().catch(() => ({}))) as { message?: string }
+      const data = (await response.json().catch(() => ({}))) as PasswordResetErrorBody
       if (!response.ok) {
-        throw new Error(data?.message ?? '密码更新失败')
+        throw new Error(resolvePasswordResetError(data))
       }
 
       setSuccessMessage('密码已更新。')
       onNavigate(signInPath)
     } catch (error) {
-      setErrorMessage(String(error))
+      setErrorMessage(error instanceof Error ? error.message : '密码更新失败')
     } finally {
       setIsBusy(false)
     }
