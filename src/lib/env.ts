@@ -23,6 +23,7 @@ export function getSupabaseEnv(): SupabaseEnv {
 
 export function getApiEnv(): ApiEnv {
   return {
-    apiBaseUrl: getEnvValue({ key: 'VITE_API_BASE_URL' }).replace(/\/$/, ''),
+    // apiBaseUrl: getEnvValue({ key: 'VITE_API_BASE_URL' }).replace(/\/$/, ''),
+    apiBaseUrl: 'https://nrswzocoshah.sealoshzh.site'
   }
 }
