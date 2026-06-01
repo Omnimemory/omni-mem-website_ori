@@ -2898,7 +2898,7 @@ const contentByLocale: Record<Locale, AppContent> = {
     customerCase: {
       eyebrow: '客户案例 / INDUSTRY VERTICAL',
       title: '陪伴机器人深度适配：长效情感记忆机器人',
-      summary: '某国内领先的家用陪伴机器人团队，基于 memAura 架构完成了儿童陪伴机器人底层升级。',
+      summary: '某国内领先的家用陪伴机器人团队，基于 memAura 架构完成了陪伴机器人底层升级。',
       backgroundTitle: '客户背景',
       painTitle: '核心挑战',
       solutionTitle: '解决方案（The OmniMemory Advantage）',
@@ -2959,7 +2959,7 @@ const contentByLocale: Record<Locale, AppContent> = {
       requiredText: '请留下您的邮箱或联系方式。',
       successText: '已收到登记，我们会尽快联系您。',
       closeLabel: '关闭联系窗口',
-      formHint: '也可以直接复制上方微信联系商务。',
+      formHint: '提交信息后，会有专人及时与您沟通，也可以直接复制上方微信联系商务。',
     },
     faq: {
       eyebrow: '常见问题',
