@@ -55,7 +55,7 @@ export function UpdatePasswordPage({ dashboardPath, signInPath, onNavigate }: Up
       const response = await fetch(`${apiBaseUrl}/auth/password-reset/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reset_token: resetToken, password }),
+        body: JSON.stringify({ access_token: resetToken, password }),
       })
       const data = (await response.json().catch(() => ({}))) as { message?: string }
       if (!response.ok) {
