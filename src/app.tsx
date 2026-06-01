@@ -22,7 +22,9 @@ import { OpenClawMemoryPluginPage } from './pages/openclaw-memory-plugin'
 export function App() {
   const [locale, setLocale] = useState<Locale>(() => getPreferredLocale())
   const [routeKey, setRouteKey] = useState<RouteKey>(() =>
-    getRouteFromPathname({ pathname: getBrowserPathname() })
+    isPasswordRecoveryLink()
+      ? 'updatePassword'
+      : getRouteFromPathname({ pathname: getBrowserPathname() })
   )
   const [isScrolled, setIsScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
@@ -118,6 +120,17 @@ export function App() {
       const nextUrl = `${correctPath}${window.location.search}${window.location.hash}`
       window.history.replaceState(null, '', nextUrl)
     }
+  }, [locale])
+
+  // When arriving from a password-reset email link, normalize the URL to the
+  // update-password route (keeping the recovery token in the hash) and select
+  // that route so the user sees the new-password form instead of the homepage.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!isPasswordRecoveryLink()) return
+    const target = buildLocalePathname({ pathname: ROUTE_PATHS.updatePassword, locale })
+    window.history.replaceState(null, '', `${target}${window.location.hash}`)
+    setRouteKey('updatePassword')
   }, [locale])
 
   useEffect(() => {
@@ -2363,6 +2376,17 @@ function stripLocaleFromPathname({ pathname }: { pathname: string }) {
 function getBrowserPathname() {
   if (typeof window === 'undefined') return '/'
   return window.location.pathname
+}
+
+// Supabase appends the recovery tokens as a URL hash fragment when a user clicks
+// the password-reset email link, e.g. /zh/#access_token=...&type=recovery.
+// Detect that so we can route straight to the update-password page.
+function isPasswordRecoveryLink() {
+  if (typeof window === 'undefined') return false
+  const hash = window.location.hash.replace(/^#/, '')
+  if (!hash) return false
+  const params = new URLSearchParams(hash)
+  return params.get('type') === 'recovery' && Boolean(params.get('access_token'))
 }
 
 function getDashboardTitle(routeKey: RouteKey, locale: Locale) {
