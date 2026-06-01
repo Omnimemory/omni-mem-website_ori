@@ -14,7 +14,13 @@ export async function handleUnauthorized() {
   if (signingOut) return
   signingOut = true
   try {
-    await getSupabaseClient().auth.signOut()
+    const client = getSupabaseClient()
+    const { error } = await client.auth.signOut()
+    if (error) {
+      // The revoke call itself was rejected (the token is already invalid).
+      // Force-clear the local session so the app still flips to logged-out.
+      await client.auth.signOut({ scope: 'local' }).catch(() => {})
+    }
   } catch {
     // Ignore: token is already gone or the client is unavailable.
   } finally {

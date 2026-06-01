@@ -37,7 +37,12 @@ export async function signInWithPassword({
 
 export async function signOut({ client }: SignOutParams): Promise<AuthResult> {
   const { error } = await client.auth.signOut()
-  if (error) return { ok: false, error: error.message }
+  if (error) {
+    // The server rejected the token revoke (e.g. 403 because the token is
+    // already expired/invalid). The user still wants to be logged out, so
+    // clear the local session unconditionally and report success.
+    await client.auth.signOut({ scope: 'local' }).catch(() => {})
+  }
 
   return { ok: true }
 }

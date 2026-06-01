@@ -1,7 +1,12 @@
 import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { NextUIProvider } from '@nextui-org/react'
+import { installUnauthorizedGuard } from './lib/session-guard'
 import './index.css'
+
+// Install before anything renders so even the first page's API calls are
+// covered by the 401 -> sign-out interceptor.
+installUnauthorizedGuard()
 
 const App = React.lazy(() => import('./app').then((module) => ({ default: module.App })))
 
